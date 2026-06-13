@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" translate="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="google" content="notranslate">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://fonts.googleapis.com https://fonts.gstatic.com https://cdn.jsdelivr.net https://*.supabase.co https://assets.coingecko.com wss://stream.binance.com">
+    <meta http-equiv="X-XSS-Protection" content="1; mode=block">
+    <meta name="theme-color" content="#020617">
+    <title>POP Capital | لوحة التحكم</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    
+    <style>
+        :root {
+            --primary: #06b6d4; --accent: #10b981; --dark: #020617; 
+            --surface: rgba(11, 19, 43, 0.75); --danger: #ef4444; --purple: #a855f7;
+            --gold: #fbbf24;
+        }
+
+        * { user-select: none; -webkit-user-select: none; -webkit-user-drag: none; box-sizing: border-box; }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: var(--dark);
+            color: white;
+            margin: 0;
+            background-image: 
+                radial-gradient(circle at 10% 15%, rgba(6, 182, 212, 0.08), transparent 40%),
+                radial-gradient(circle at 90% 85%, rgba(16, 185, 129, 0.05), transparent 40%),
+                repeating-linear-gradient(45deg, rgba(255,255,255,0.01) 0px, rgba(255,255,255,0.01) 1px, transparent 1px, transparent 10px);
+            background-attachment: fixed;
+            padding-bottom: 7rem;
+            overflow-x: hidden;
+        }
+
+        #initLoader { 
+            position: fixed; inset: 0; background: rgba(2, 6, 23, 0.98); backdrop-filter: blur(20px); z-index: 99999; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            transition: opacity 0.6s; 
+        }
+        
+        .square-loader {
+            width: 90px; height: 90px;
+            background: rgba(6, 182, 212, 0.03);
+            border: 2px solid rgba(6, 182, 212, 0.3);
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 0 30px rgba(6, 182, 212, 0.15);
+            animation: squarePulse 2.5s ease-in-out infinite alternate;
+        }
+        @keyframes squarePulse {
+            0% { box-shadow: 0 0 15px rgba(6, 182, 212, 0.15); }
+            100% { box-shadow: 0 0 40px rgba(6, 182, 212, 0.5); }
+        }
+
+        .circle-spinner {
+            width: 55px; height: 55px;
+            border-radius: 50%;
+            border: 3px solid transparent;
+            border-top-color: var(--primary);
+            border-right-color: var(--accent);
+            border-bottom-color: var(--purple);
+            border-left-color: rgba(255,255,255,0.2);
+            animation: spinClockwise 1s linear infinite;
+        }
+        @keyframes spinClockwise { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .terminal-status { 
+            font-family: monospace; color: var(--primary); font-size: 0.8rem; 
+            letter-spacing: 3px; margin-top: 2rem; font-weight: bold; 
+        }
+
+        .scan-line {
+            position: fixed; top: 0; left: 0; width: 100%; height: 2px;
+            background: rgba(6, 182, 212, 0.3);
+            animation: scan 4s linear infinite; z-index: 9999; pointer-events: none;
+        }
+        @keyframes scan { 0% { top: 0; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
+
+        #mainApp { display: none; width: 100%; animation: fadeIn 0.8s ease forwards; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .glass-panel {
+            background: var(--surface);
+            backdrop-filter: blur(35px); -webkit-backdrop-filter: blur(35px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-top: 1px solid rgba(6, 182, 212, 0.3);
+            border-radius: 2rem;
+            box-shadow: 0 35px 65px rgba(0,0,0,0.8), inset 0 2px 0px rgba(255,255,255,0.05);
+            position: relative;
+        }
+
+        .proxy-badge {
+            background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3);
+            animation: pulse-border 2s infinite;
+        }
+        @keyframes pulse-border { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); } 70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
+
+        /* شريط إعلاني */
+        .marquee-bar {
+            overflow: hidden; white-space: nowrap; position: relative;
+            background: linear-gradient(90deg, rgba(6, 182, 212, 0.15), rgba(15, 23, 42, 0.9));
+            border: 1px solid rgba(6, 182, 212, 0.2);
+            border-radius: 1rem; margin-bottom: 1.5rem;
+            padding: 0.7rem 0; box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+        }
+        .marquee-track {
+            display: inline-block; 
+            animation: marquee 40s linear infinite;
+            padding-left: 100%;
+        }
+        .marquee-content {
+            display: inline-flex; align-items: center; gap: 3rem;
+            font-weight: 800; font-size: 0.8rem; text-shadow: 0 0 10px rgba(0,0,0,0.8);
+        }
+        @keyframes marquee {
+            0% { transform: translateX(0); }
+            62.5% { transform: translateX(-100%); }
+            100% { transform: translateX(-100%); }
+        }
+
+        .crypto-card {
+            background: rgba(4, 9, 26, 0.65); border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 1rem; padding: 0.75rem 0.5rem; transition: border-color 0.2s;
+        }
+        .crypto-card:hover { border-color: rgba(6, 182, 212, 0.3); }
+
+        .crypto-price { font-family: monospace; font-weight: 900; font-size: 0.9rem; }
+        .crypto-symbol { font-weight: 900; font-family: monospace; font-size: 1.1rem; }
+
+        @keyframes pulse-flash-up {
+            0% { background-color: rgba(16, 185, 129, 0.4); }
+            100% { background-color: rgba(4, 9, 26, 0.65); }
+        }
+        @keyframes pulse-flash-down {
+            0% { background-color: rgba(239, 68, 68, 0.4); }
+            100% { background-color: rgba(4, 9, 26, 0.65); }
+        }
+        .flash-up-active { animation: pulse-flash-up 0.15s ease-out forwards; }
+        .flash-down-active { animation: pulse-flash-down 0.15s ease-out forwards; }
+
+        .modal {
+            position: fixed; inset: 0; background: rgba(0, 2, 8, 0.92); backdrop-filter: blur(20px);
+            z-index: 2000; display: none; align-items: center; justify-content: center; padding: 1.5rem; opacity: 0; transition: opacity 0.3s;
+        }
+        .modal-content {
+            background: linear-gradient(145deg, rgba(15, 23, 42, 0.95), rgba(2, 6, 15, 0.95));
+            border: 1px solid rgba(6, 182, 212, 0.3); border-radius: 2.5rem;
+            width: 100%; max-width: 420px; padding: 2rem; transform: scale(0.85); transition: all 0.4s;
+        }
+        .modal.active { display: flex; opacity: 1; }
+        .modal.active .modal-content { transform: scale(1); }
+
+        .bottom-nav {
+            position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+            width: 100%; max-width: 512px; background: rgba(2, 6, 15, 0.95); backdrop-filter: blur(40px);
+            border-top: 1px solid rgba(255, 255, 255, 0.08); border-radius: 2.5rem 2.5rem 0 0;
+            display: flex; justify-content: space-around; padding: 1rem 0.5rem 1.5rem; z-index: 1000;
+        }
+        .nav-item { display: flex; flex-direction: column; align-items: center; gap: 0.4rem; color: #6b7280; text-decoration: none; cursor: pointer; }
+        .nav-item.active { color: var(--primary); }
+        .nav-label { font-size: 0.7rem; font-weight: 800; }
+    </style>
+</head>
+<body class="max-w-lg mx-auto relative min-h-screen px-4 pt-5">
+    
+    <div class="scan-line"></div>
+
+    <div id="initLoader">
+        <div class="square-loader"><div class="circle-spinner"></div></div>
+        <div id="termText" class="terminal-status">تهيئة لوحة التحكم المشفرة...</div>
+    </div>
+
+    <div id="mainApp">
+        <header class="flex justify-between items-center mb-4">
+            <div class="flex items-center gap-3">
+                <div class="w-14 h-14 rounded-2xl border-2 border-cyan-500/40 p-0.5 bg-gradient-to-br from-cyan-950 to-black shadow-lg shadow-cyan-900/40 overflow-hidden cursor-pointer" onclick="navigateTo('profile')">
+                    <img src="https://assets.coingecko.com/coins/images/1/large/bitcoin.png" class="w-full h-full object-cover rounded-xl" alt="POP">
+                </div>
+                <div>
+                    <h1 class="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-cyan-200 to-cyan-500">POP CAPITAL</h1>
+                    <span class="proxy-badge text-[9px] text-emerald-400 font-mono font-bold px-2 py-0.5 rounded-md flex items-center gap-1 mt-1">
+                        <span id="userNameLabel">جاري التحميل...</span>
+                    </span>
+                </div>
+            </div>
+            <div class="flex flex-col items-end gap-1">
+                <div class="bg-slate-900/80 border border-white/10 rounded-xl px-3 py-1.5 flex items-center gap-2">
+                    <span class="w-2 h-2 bg-cyan-500 rounded-full animate-pulse"></span>
+                    <span class="text-[10px] font-mono font-bold text-cyan-100">GLOBAL_NODE</span>
+                </div>
+                <button onclick="refreshBalance()" class="text-[10px] bg-cyan-500/20 text-cyan-400 px-2 py-1 rounded-lg font-bold hover:bg-cyan-500/30 transition">⟳ تحديث الرصيد</button>
+            </div>
+        </header>
+
+        <!-- الشريط الإعلاني -->
+        <div class="marquee-bar">
+            <div class="marquee-track">
+                <div class="marquee-content">
+                    <span class="text-cyan-300">🛡️ نظام حماية الطبقات المتعددة نشط 100%</span>
+                    <span class="text-emerald-300">🚀 عوائد استثمارية تعتمد على الذكاء الاصطناعي الكمي</span>
+                    <span class="text-amber-400">₿ <span id="btcLivePrice">جاري التحميل...</span></span>
+                    <span class="text-cyan-300">🛡️ نظام حماية الطبقات المتعددة نشط 100%</span>
+                    <span class="text-emerald-300">🚀 عوائد استثمارية تعتمد على الذكاء الاصطناعي الكمي</span>
+                    <span class="text-amber-400">₿ <span id="btcLivePrice2">جاري التحميل...</span></span>
+                </div>
+            </div>
+        </div>
+
+        <main id="mainContent">
+            <div class="glass-panel p-7 mb-6">
+                <div class="text-center relative z-10 mb-6">
+                    <p class="text-[11px] text-cyan-400/80 uppercase font-black">الرصيد الاستثماري المتاح</p>
+                    <h2 class="text-5xl font-black font-mono text-white flex items-center justify-center gap-1">
+                        <span class="text-3xl text-cyan-500">$</span><span id="userBalance">0.00</span>
+                    </h2>
+                    <p class="text-[10px] text-gray-400 mt-2 font-mono">Quantum Liquidity Secured</p>
+                </div>
+
+                <!-- الرصيد المجمد -->
+                <div class="bg-black/40 border border-yellow-500/20 rounded-xl p-3 mb-4 text-center">
+                    <span class="text-[10px] text-yellow-400 uppercase font-bold">🔒 رأس المال المجمد في الاستثمارات</span>
+                    <span class="text-lg font-mono font-black text-yellow-300 block">$<span id="frozenBalance">0.00</span></span>
+                </div>
+
+                <div class="grid grid-cols-3 gap-3 relative z-10">
+                    <div class="bg-black/40 border border-white/5 rounded-xl p-3 text-center cursor-pointer hover:bg-black/60 transition-all" onclick="navigateTo('deposit')">
+                        <div class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 mx-auto flex items-center justify-center mb-1">↓</div>
+                        <span class="text-[10px] font-bold text-gray-400">شحن الحساب</span>
+                    </div>
+                    <div class="bg-black/40 border border-white/5 rounded-xl p-3 text-center cursor-pointer hover:bg-black/60 transition-all" onclick="navigateTo('wallet')">
+                        <div class="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-400 mx-auto flex items-center justify-center mb-1">↑</div>
+                        <span class="text-[10px] font-bold text-gray-400">سحب فوري</span>
+                    </div>
+                    <div class="bg-black/40 border border-white/5 rounded-xl p-3 text-center cursor-pointer hover:bg-black/60 transition-all" onclick="openModal('companyProfileModal')">
+                        <div class="w-8 h-8 rounded-lg bg-cyan-500/10 text-cyan-400 mx-auto flex items-center justify-center mb-1">ℹ️</div>
+                        <span class="text-[10px] font-bold text-gray-400">ملف العقدة</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-slate-900/70 border border-white/10 rounded-2xl p-4 mb-6 flex justify-around items-center text-center shadow-lg backdrop-blur-md">
+                <div>
+                    <p class="text-[10px] text-gray-400 font-bold uppercase">الأرباح التراكمية</p>
+                    <p class="text-sm font-mono font-black text-emerald-400">$<span id="userCommissions">0.00</span></p>
+                </div>
+                <div class="w-px h-8 bg-gradient-to-b from-transparent via-white/20 to-transparent"></div>
+                <div>
+                    <p class="text-[10px] text-gray-400 font-bold uppercase">أيام النشاط</p>
+                    <p class="text-sm font-mono font-black text-cyan-400" id="userStreak">0</p>
+                    <button onclick="resetDailyStreak()" class="text-[8px] text-gray-600 hover:text-red-400 hidden" id="resetStreakBtn">⟳ تصفير</button>
+                </div>
+                <div class="w-px h-8 bg-gradient-to-b from-transparent via-white/20 to-transparent"></div>
+                <div>
+                    <p class="text-[10px] text-gray-400 font-bold uppercase">حالة العقدة</p>
+                    <p class="text-[11px] font-black text-purple-400" id="userStatus">نشط 🟢</p>
+                </div>
+            </div>
+
+            <div class="space-y-6" id="cryptoGridsContainer"></div>
+
+            <div class="text-center mt-8 mb-4">
+                <button onclick="openModal('companyModal')" class="bg-gradient-to-r from-amber-500 to-orange-600 text-black font-bold px-8 py-3 rounded-full text-sm shadow-lg hover:scale-105 transition-transform">
+                    ⚡ ملف الشركة - تحذير المخاطرة
+                </button>
+            </div>
+        </main>
+
+        <nav class="bottom-nav">
+            <div class="nav-item active" onclick="navigateTo('dashboard')">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                <span class="nav-label">الرئيسية</span>
+            </div>
+            <div class="nav-item" onclick="navigateTo('plans')">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                <span class="nav-label">الاستثمار</span>
+            </div>
+            <div class="nav-item relative z-10" onclick="navigateTo('daily')">
+                <div class="bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600 rounded-full p-3.5 shadow-[0_0_25px_rgba(16,185,129,0.6)] text-white transform -translate-y-6 border-[5px] border-[#020617]">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14"></path></svg>
+                </div>
+                <span class="nav-label text-emerald-400 mt-[-18px] font-black">مكافأة</span>
+            </div>
+            <div class="nav-item" onclick="navigateTo('referral')">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                <span class="nav-label">الفريق</span>
+            </div>
+            <div class="nav-item" onclick="navigateTo('profile')">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                <span class="nav-label">حسابي</span>
+            </div>
+        </nav>
+    </div>
+
+    <div id="companyModal" class="modal">
+        <div class="modal-content text-center">
+            <button onclick="closeModal('companyModal')" class="absolute top-4 left-4 text-gray-500 hover:text-white text-2xl">&times;</button>
+            <div class="w-20 h-20 mx-auto bg-gradient-to-br from-red-600 to-yellow-500 rounded-full flex items-center justify-center text-3xl font-black shadow-lg mb-4">⚠️</div>
+            <h2 class="text-2xl font-black text-red-400 mb-4">POP CAPITAL</h2>
+            <div class="text-sm text-gray-300 leading-relaxed space-y-3 text-justify p-4 bg-black/40 rounded-xl border border-red-500/20">
+                <p class="font-bold text-yellow-400">🃏 منصة ترفيهية قائمة على الحظ والمخاطرة</p>
+                <p>هذه المنصة صُممت كلعبة حظ جماعية، حيث يمكنك الربح في البداية عن طريق الحظ وتجنيد الأعضاء، لكن القوانين الرياضية تضمن أن الأغلبية ستخسر أموالها في النهاية.</p>
+                <p>✅ <span class="text-green-400">في البداية:</span> قد تحقق أرباحاً سريعة وتشعر بالحماس.</p>
+                <p>❌ <span class="text-red-400">في النهاية:</span> الخسارة شبه مؤكدة، لأن النموذج يعتمد على تدفق مستمر للمستخدمين الجدد.</p>
+                <p class="font-bold text-white">⚠️ تحذير صريح:</p>
+                <p>نظام المنصة يعمل كهرم مالي لامركزي. استمرارها يعتمد على استقطاب أعضاء جدد. عند توقف التوظيف، تنهار المنصة ويخسر الجميع. نحن لا نضمن أي أرباح، وأموالك معرضة للخسارة الكاملة.</p>
+                <p class="text-[10px] text-gray-500 mt-2">POP Capital - استمر حتى آخر نفس... لكن اللعبة تنتهي دائماً.</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="companyProfileModal" class="modal">
+        <div class="modal-content text-center">
+            <button onclick="closeModal('companyProfileModal')" class="absolute top-4 left-4 text-gray-500 hover:text-white text-2xl">&times;</button>
+            <div class="w-16 h-16 bg-gradient-to-br from-cyan-500 to-emerald-500 rounded-2xl mx-auto flex items-center justify-center text-2xl font-black mb-3">POP</div>
+            <h2 class="text-xl font-bold text-white">POP Capital Node</h2>
+            <p class="text-[11px] text-gray-300 mt-2">عقدة تداول كمي لا مركزية.</p>
+        </div>
+    </div>
+
+    <div style="position:absolute; opacity:0; pointer-events:none;">
+        <a href="https://fake.popcapital.com">fake</a>
+    </div>
+
+    <script>
+        const supabaseUrl = 'https://aqoufnmdhopmdobknczg.supabase.co';
+        const supabaseKey = 'sb_publishable_BvmWY2L-ZfwkZloJ_uPaDw_9wTq84D-';
+        const _supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+        // ========== حماية شاملة من أدوات الفحص ==========
+        document.addEventListener('contextmenu', e => e.preventDefault());
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'F12' || 
+                (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) ||
+                (e.ctrlKey && (e.key === 'u' || e.key === 's'))) {
+                e.preventDefault();
+                return false;
+            }
+        });
+        document.addEventListener('dragstart', e => e.preventDefault());
+        document.addEventListener('drop', e => e.preventDefault());
+
+        function detectDevTools() {
+            const threshold = 160;
+            if (window.outerWidth - window.innerWidth > threshold || 
+                window.outerHeight - window.innerHeight > threshold) {
+                document.body.innerHTML = `<div style="display:flex; align-items:center; justify-content:center; height:100vh; background:#020617; color:red; font-family:Cairo; font-size:1.5rem; text-align:center; direction:rtl;">⚠️ تم اكتشاف محاولة فحص أو تحليل! <br> الصفحة محظورة لأسباب أمنية. <br> يرجى إغلاق أدوات المطور وإعادة تحميل الصفحة.</div>`;
+                clearInterval(devToolsInterval);
+            }
+        }
+        const devToolsInterval = setInterval(detectDevTools, 500);
+        setInterval(() => { console.clear(); }, 1000);
+        console.log("%c⚠️ تحذير أمني", "color: red; font-size: 20px;");
+
+        // ========== التنقل ==========
+        function navigateTo(page) { window.location.href = page + '.html'; }
+
+        // ========== العملات ==========
+        const cryptos = {
+            'BTCUSDT': { cat: 'trending', img: 'https://assets.coingecko.com/coins/images/1/large/bitcoin.png' },
+            'ETHUSDT': { cat: 'trending', img: 'https://assets.coingecko.com/coins/images/279/large/ethereum.png' },
+            'BNBUSDT': { cat: 'trending', img: 'https://assets.coingecko.com/coins/images/825/large/bnb-icon2_2x.png' },
+            'SOLUSDT': { cat: 'trending', img: 'https://assets.coingecko.com/coins/images/4128/large/solana.png' },
+            'XRPUSDT': { cat: 'trending', img: 'https://assets.coingecko.com/coins/images/44/large/xrp-symbol-white-128.png' },
+            'ADAUSDT': { cat: 'trending', img: 'https://assets.coingecko.com/coins/images/975/large/cardano.png' },
+            'AVAXUSDT':{ cat: 'trending', img: 'https://assets.coingecko.com/coins/images/12559/large/Avalanche_Circle_RedWhite_Trans.png' },
+            'LINKUSDT': { cat: 'medium', img: 'https://assets.coingecko.com/coins/images/877/large/chainlink-new-logo.png' },
+            'DOTUSDT':  { cat: 'medium', img: 'https://assets.coingecko.com/coins/images/12171/large/polkadot.png' },
+            'MATICUSDT':{ cat: 'medium', img: 'https://assets.coingecko.com/coins/images/4713/large/matic-token-icon.png' },
+            'UNIUSDT':  { cat: 'medium', img: 'https://assets.coingecko.com/coins/images/12504/large/uniswap-uni.png' },
+            'LTCUSDT':  { cat: 'medium', img: 'https://assets.coingecko.com/coins/images/2/large/litecoin.png' },
+            'ATOMUSDT': { cat: 'medium', img: 'https://assets.coingecko.com/coins/images/1481/large/cosmos_hub.png' },
+            'NEARUSDT': { cat: 'medium', img: 'https://assets.coingecko.com/coins/images/10365/large/near.png' },
+            'DOGEUSDT': { cat: 'micro', img: 'https://assets.coingecko.com/coins/images/5/large/dogecoin.png' },
+            'SHIBUSDT': { cat: 'micro', img: 'https://assets.coingecko.com/coins/images/11939/large/shiba.png' },
+            'PEPEUSDT': { cat: 'micro', img: 'https://assets.coingecko.com/coins/images/29850/large/pepe-token.jpeg' },
+            'FLOKIUSDT':{ cat: 'micro', img: 'https://assets.coingecko.com/coins/images/16746/large/FLOKI.png' },
+            'BONKUSDT': { cat: 'micro', img: 'https://assets.coingecko.com/coins/images/28600/large/bonk.jpg' },
+            'WIFUSDT':  { cat: 'micro', img: 'https://assets.coingecko.com/coins/images/33566/large/dogwifhat.jpg' },
+            'BOMEUSDT': { cat: 'micro', img: 'https://assets.coingecko.com/coins/images/36071/large/bome.png' }
+        };
+
+        let lastPrices = {};
+
+        function renderCryptoGrids() {
+            const container = document.getElementById('cryptoGridsContainer');
+            container.innerHTML = `
+                <div>
+                    <h3 class="text-[12px] text-cyan-400 font-black uppercase mb-3">📈 أصول رائجة</h3>
+                    <div class="grid grid-cols-3 gap-2.5" id="trendingGrid"></div>
+                </div>
+                <div>
+                    <h3 class="text-[12px] text-purple-400 font-black uppercase mb-3">📊 أصول متوسطة</h3>
+                    <div class="grid grid-cols-3 gap-2.5" id="mediumGrid"></div>
+                </div>
+                <div>
+                    <h3 class="text-[12px] text-amber-500 font-black uppercase mb-3">🔥 أصول مخاطرة</h3>
+                    <div class="grid grid-cols-3 gap-2.5" id="microGrid"></div>
+                </div>
+            `;
+            for (let sym in cryptos) {
+                const c = cryptos[sym];
+                const card = document.createElement('div');
+                card.className = 'crypto-card flex flex-col items-center';
+                card.id = 'card-' + sym;
+                card.innerHTML = `
+                    <img src="${c.img}" class="w-7 h-7 rounded-full border border-white/10 mb-1">
+                    <div class="crypto-symbol">${sym.replace('USDT','')}</div>
+                    <div class="crypto-price" id="price-${sym}">---</div>
+                    <div class="crypto-change text-[10px]" id="change-${sym}">0.00%</div>
+                `;
+                if (c.cat === 'trending') document.getElementById('trendingGrid').appendChild(card);
+                else if (c.cat === 'medium') document.getElementById('mediumGrid').appendChild(card);
+                else document.getElementById('microGrid').appendChild(card);
+            }
+        }
+
+        function formatPrice(price) {
+            if (price >= 1) return '$' + price.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+            else if (price >= 0.01) return '$' + price.toFixed(6);
+            else return '$' + price.toFixed(10);
+        }
+
+        function connectBinanceWebSocket() {
+            const streams = Object.keys(cryptos).map(s => s.toLowerCase() + '@ticker').join('/');
+            const ws = new WebSocket('wss://stream.binance.com/stream?streams=' + streams);
+
+            ws.onmessage = (event) => {
+                const payload = JSON.parse(event.data);
+                const ticker = payload.data;
+                if (!ticker) return;
+
+                const sym = ticker.s;
+                if (!cryptos[sym]) return;
+
+                const priceEl = document.getElementById('price-' + sym);
+                const changeEl = document.getElementById('change-' + sym);
+                const cardEl = document.getElementById('card-' + sym);
+                if (!priceEl || !changeEl || !cardEl) return;
+
+                const newPrice = parseFloat(ticker.c);
+                const oldPrice = lastPrices[sym] || newPrice;
+                lastPrices[sym] = newPrice;
+
+                priceEl.textContent = formatPrice(newPrice);
+                const changePercent = parseFloat(ticker.P).toFixed(2);
+                changeEl.textContent = (changePercent >= 0 ? '+' : '') + changePercent + '%';
+                
+                if (newPrice > oldPrice) {
+                    priceEl.style.color = '#10b981';
+                    changeEl.className = 'crypto-change text-[10px] bg-emerald-500/20 text-emerald-400 px-1 py-0.5 rounded';
+                    cardEl.classList.add('flash-up-active');
+                    setTimeout(() => cardEl.classList.remove('flash-up-active'), 150);
+                } else if (newPrice < oldPrice) {
+                    priceEl.style.color = '#ef4444';
+                    changeEl.className = 'crypto-change text-[10px] bg-rose-500/20 text-rose-400 px-1 py-0.5 rounded';
+                    cardEl.classList.add('flash-down-active');
+                    setTimeout(() => cardEl.classList.remove('flash-down-active'), 150);
+                }
+            };
+
+            ws.onclose = () => { setTimeout(connectBinanceWebSocket, 3000); };
+        }
+
+        async function fetchBTCPriceForMarquee() {
+            try {
+                const res = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT');
+                const data = await res.json();
+                const price = parseFloat(data.price).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+                document.getElementById('btcLivePrice').innerText = '$' + price;
+                document.getElementById('btcLivePrice2').innerText = '$' + price;
+            } catch(e) {}
+        }
+
+        function openModal(id) { const m = document.getElementById(id); m.style.display='flex'; setTimeout(() => m.classList.add('active'),10); }
+        function closeModal(id) { const m = document.getElementById(id); m.classList.remove('active'); setTimeout(() => m.style.display='none',300); }
+
+        // ========= تحرير الاستثمارات المنتهية (رأس المال فقط) =========
+        async function releaseCompletedInvestments(email) {
+            const now = new Date().toISOString();
+            const { data: expired } = await _supabase
+                .from('active_investments')
+                .select('*')
+                .eq('user_email', email)
+                .eq('status', 'active')
+                .lte('end_date', now);
+
+            if (!expired || expired.length === 0) return;
+
+            const { data: user } = await _supabase
+                .from('users_profiles')
+                .select('balance')
+                .eq('email', email)
+                .maybeSingle();
+
+            let newBalance = parseFloat(user.balance || 0);
+
+            for (const inv of expired) {
+                newBalance += parseFloat(inv.amount);
+                await _supabase.from('active_investments').update({ status: 'completed' }).eq('id', inv.id);
+            }
+
+            await _supabase.from('users_profiles').update({ balance: newBalance }).eq('email', email);
+
+            let session = JSON.parse(localStorage.getItem('user_session_plain'));
+            if (session) {
+                session.balance = newBalance;
+                localStorage.setItem('user_session_plain', JSON.stringify(session));
+            }
+        }
+
+        // ========= تحديث الرصيد من قاعدة البيانات =========
+        async function refreshBalance() {
+            const session = JSON.parse(localStorage.getItem('user_session_plain'));
+            if (!session || !session.email) return;
+            try {
+                await releaseCompletedInvestments(session.email);
+
+                const { data: profile } = await _supabase
+                    .from('users_profiles')
+                    .select('balance, total_commissions, daily_streak, status')
+                    .eq('email', session.email)
+                    .maybeSingle();
+
+                if (profile) {
+                    document.getElementById('userBalance').innerText = parseFloat(profile.balance || 0).toFixed(2);
+                    document.getElementById('userCommissions').innerText = parseFloat(profile.total_commissions || 0).toFixed(2);
+                    document.getElementById('userStreak').innerText = profile.daily_streak || 0;
+                    document.getElementById('userStatus').innerText = profile.status === 'active' ? 'نشط 🟢' : 'موقوف 🔴';
+                    
+                    session.balance = profile.balance;
+                    session.total_commissions = profile.total_commissions;
+                    session.daily_streak = profile.daily_streak;
+                    session.status = profile.status;
+                    localStorage.setItem('user_session_plain', JSON.stringify(session));
+                }
+
+                // المجمّد
+                const { data: activeInvs } = await _supabase
+                    .from('active_investments')
+                    .select('amount')
+                    .eq('user_email', session.email)
+                    .eq('status', 'active');
+
+                let frozen = 0;
+                if (activeInvs) frozen = activeInvs.reduce((sum, inv) => sum + parseFloat(inv.amount || 0), 0);
+                document.getElementById('frozenBalance').innerText = frozen.toFixed(2);
+
+            } catch(e) {}
+        }
+
+        async function authenticateAndLoad() {
+            const loader = document.getElementById('initLoader');
+            const main = document.getElementById('mainApp');
+            const hideLoader = () => {
+                if (loader) { loader.style.opacity='0'; setTimeout(() => { loader.style.display='none'; if(main) main.style.display='block'; },600); }
+            };
+            const forceHide = setTimeout(hideLoader, 4000);
+
+            try {
+                const session = JSON.parse(localStorage.getItem('user_session_plain'));
+                if (!session || !session.email) { window.location.href='login.html'; return; }
+
+                document.getElementById('userBalance').innerText = parseFloat(session.balance||0).toFixed(2);
+                document.getElementById('userNameLabel').innerText = session.telegram_user || 'VIP_NODE';
+                document.getElementById('userCommissions').innerText = parseFloat(session.total_commissions||0).toFixed(2);
+                document.getElementById('userStatus').innerText = session.status === 'active' ? 'نشط 🟢' : 'موقوف 🔴';
+
+                renderCryptoGrids();
+                connectBinanceWebSocket();
+
+                setInterval(fetchBTCPriceForMarquee, 3000);
+                fetchBTCPriceForMarquee();
+
+                refreshBalance();
+                setInterval(refreshBalance, 15000);
+                document.addEventListener('visibilitychange', () => {
+                    if (document.visibilityState === 'visible') refreshBalance();
+                });
+
+                clearTimeout(forceHide);
+                setTimeout(hideLoader, 800);
+
+            } catch(e) {
+                clearTimeout(forceHide);
+                setTimeout(hideLoader, 500);
+            }
+        }
+
+        window.onload = authenticateAndLoad;
+    </script>
+</body>
+</html>

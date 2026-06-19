@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" translate="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="google" content="notranslate">
+    <title>POP Admin | لوحة التحكم المتكاملة</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root { --primary: #06b6d4; --accent: #10b981; --danger: #ef4444; --warning: #f59e0b; --purple: #a855f7; --pink: #ec4899; }
+        * { user-select: none; box-sizing: border-box; }
+        body { font-family: 'Cairo', sans-serif; background: #0f172a; color: white; margin: 0; min-height: 100vh; }
+        
+        .sidebar { position: fixed; right: 0; top: 0; width: 220px; height: 100vh; background: rgba(2,6,15,0.98); backdrop-filter: blur(20px); border-left: 1px solid rgba(255,255,255,0.05); padding: 1.5rem 0; overflow-y: auto; z-index: 1000; }
+        .sidebar::-webkit-scrollbar { width: 3px; }
+        .sidebar::-webkit-scrollbar-thumb { background: rgba(6,182,212,0.3); border-radius: 10px; }
+        .logo { text-align: center; padding: 0 1rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.05); margin-bottom: 1rem; }
+        .logo h1 { font-size: 1.2rem; font-weight: 900; background: linear-gradient(90deg, #06b6d4, #10b981); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .logo span { font-size: 0.6rem; color: #64748b; -webkit-text-fill-color: #64748b; }
+        .nav-tab { display: flex; align-items: center; gap: 0.8rem; padding: 0.8rem 1.5rem; color: #94a3b8; cursor: pointer; transition: 0.3s; border-right: 3px solid transparent; font-size: 0.85rem; font-weight: 700; text-decoration: none; width: 100%; background: transparent; border: none; border-right: 3px solid transparent; }
+        .nav-tab:hover { background: rgba(255,255,255,0.03); color: white; }
+        .nav-tab.active { color: var(--primary); background: rgba(6,182,212,0.05); border-right-color: var(--primary); }
+        .nav-tab svg { width: 20px; height: 20px; flex-shrink: 0; }
+        .nav-tab .badge { background: rgba(239,68,68,0.2); color: #ef4444; font-size: 0.6rem; padding: 0.1rem 0.5rem; border-radius: 1rem; margin-right: auto; }
+        
+        .main-content { margin-right: 220px; padding: 1.5rem; min-height: 100vh; }
+        .tab-content { display: none; animation: fadeIn 0.3s ease; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .glass-panel { background: rgba(15,23,42,0.8); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.05); border-radius: 1.5rem; padding: 1.5rem; margin-bottom: 1.5rem; }
+        .stat-card { background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.05); border-radius: 1rem; padding: 1.2rem; text-align: center; }
+        .stat-number { font-family: monospace; font-weight: 900; font-size: 1.8rem; }
+        
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+        th, td { padding: 0.6rem 0.3rem; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        th { color: #94a3b8; font-weight: 700; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+        td { word-break: break-word; max-width: 100px; }
+        
+        .status-badge { padding: 0.15rem 0.6rem; border-radius: 1rem; font-size: 0.6rem; font-weight: 800; white-space: nowrap; }
+        .status-active { background: rgba(16,185,129,0.15); color: #10b981; border: 1px solid rgba(16,185,129,0.3); }
+        .status-suspended { background: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); }
+        .status-maintenance { background: rgba(245,158,11,0.15); color: #f59e0b; border: 1px solid rgba(245,158,11,0.3); }
+        .badge-pending { background: rgba(245,158,11,0.15); color: #f59e0b; border: 1px solid rgba(245,158,11,0.3); }
+        .badge-approved { background: rgba(16,185,129,0.15); color: #10b981; border: 1px solid rgba(16,185,129,0.3); }
+        .badge-rejected { background: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); }
+        .badge-referral { background: rgba(236,72,153,0.15); color: #ec4899; border: 1px solid rgba(236,72,153,0.3); }
+        
+        .action-btn { padding: 0.2rem 0.4rem; border-radius: 0.3rem; border: none; font-weight: 700; font-size: 0.6rem; cursor: pointer; transition: 0.2s; }
+        .action-btn:hover { transform: scale(1.1); }
+        .btn-edit { background: rgba(6,182,212,0.2); color: #06b6d4; }
+        .btn-delete { background: rgba(239,68,68,0.2); color: #ef4444; }
+        .btn-toggle { background: rgba(245,158,11,0.2); color: #f59e0b; }
+        .btn-approve { background: rgba(16,185,129,0.2); color: #10b981; }
+        .btn-reject { background: rgba(239,68,68,0.2); color: #ef4444; }
+        .btn-balance { background: rgba(168,85,247,0.2); color: #a855f7; }
+        .btn-referral { background: rgba(236,72,153,0.2); color: #ec4899; }
+        .btn-add { background: linear-gradient(90deg, #06b6d4, #2563eb); color: white; padding: 0.4rem 1rem; border-radius: 0.6rem; border: none; font-weight: 800; cursor: pointer; font-size: 0.75rem; }
+        .btn-add:hover { opacity: 0.9; }
+        
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 10000; display: none; align-items: center; justify-content: center; padding: 1rem; }
+        .modal-overlay.active { display: flex; }
+        .modal-box { background: linear-gradient(145deg, #0f172a, #020617); border: 1px solid rgba(6,182,212,0.3); border-radius: 2rem; width: 100%; max-width: 480px; padding: 1.8rem; max-height: 90vh; overflow-y: auto; }
+        .modal-input { background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 0.6rem; border-radius: 0.6rem; width: 100%; font-family: monospace; margin-top: 0.2rem; font-size: 0.85rem; }
+        .modal-input:focus { outline: none; border-color: var(--primary); }
+        .modal-input option { background: #0f172a; }
+        .modal-input::placeholder { color: #475569; }
+        
+        .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-30px); background: rgba(16,185,129,0.95); padding: 0.6rem 1.2rem; border-radius: 2rem; font-weight: 800; z-index: 99999; opacity: 0; transition: 0.3s; font-size: 0.85rem; }
+        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+        .toast.error { background: rgba(239,68,68,0.95); }
+        
+        .search-box { background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.05); border-radius: 0.6rem; padding: 0.4rem 0.8rem; width: 100%; max-width: 220px; color: white; font-family: 'Cairo', sans-serif; font-size: 0.8rem; }
+        .search-box:focus { outline: none; border-color: var(--primary); }
+        
+        .flex-between { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
+        
+        .network-grid-settings { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+        .network-item { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05); border-radius: 0.6rem; padding: 0.6rem; }
+        .network-item label { font-size: 0.65rem; color: #94a3b8; display: block; margin-bottom: 0.1rem; font-weight: 700; }
+        .network-item .modal-input { font-size: 0.65rem; padding: 0.4rem; }
+        .network-status-select { font-size: 0.65rem; padding: 0.3rem; border-radius: 0.4rem; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); color: white; width: 100%; margin-top: 0.2rem; }
+        .network-status-select:focus { outline: none; border-color: var(--primary); }
+        .network-status-select option { background: #0f172a; }
+        
+        .balance-actions { display: flex; gap: 0.2rem; flex-wrap: wrap; justify-content: center; }
+        .btn-balance-add { background: rgba(16,185,129,0.2); color: #10b981; padding: 0.15rem 0.4rem; border-radius: 0.3rem; border: none; font-weight: 700; font-size: 0.6rem; cursor: pointer; transition: 0.2s; }
+        .btn-balance-add:hover { transform: scale(1.1); background: rgba(16,185,129,0.4); }
+        .btn-balance-sub { background: rgba(239,68,68,0.2); color: #ef4444; padding: 0.15rem 0.4rem; border-radius: 0.3rem; border: none; font-weight: 700; font-size: 0.6rem; cursor: pointer; transition: 0.2s; }
+        .btn-balance-sub:hover { transform: scale(1.1); background: rgba(239,68,68,0.4); }
+        
+        .referral-stats { display: flex; gap: 0.8rem; flex-wrap: wrap; }
+        .referral-stat-item { background: rgba(0,0,0,0.3); border-radius: 0.6rem; padding: 0.4rem 0.8rem; text-align: center; flex: 1; min-width: 70px; }
+        .referral-stat-item .num { font-size: 1.1rem; font-weight: 900; color: #ec4899; }
+        .referral-stat-item .label { font-size: 0.55rem; color: #94a3b8; }
+        
+        .referred-user-item { display: flex; justify-content: space-between; align-items: center; padding: 0.3rem 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.75rem; }
+        .referred-user-item:last-child { border-bottom: none; }
+        
+        @media (max-width: 768px) {
+            .sidebar { width: 55px; padding: 0.5rem 0; }
+            .sidebar .logo h1, .sidebar .logo span, .nav-tab span:not(.badge) { display: none; }
+            .nav-tab { padding: 0.6rem; justify-content: center; }
+            .nav-tab .badge { display: none; }
+            .main-content { margin-right: 55px; padding: 0.8rem; }
+            .network-grid-settings { grid-template-columns: 1fr; }
+            .referral-stats { flex-direction: column; }
+            table { font-size: 0.7rem; }
+            th, td { padding: 0.3rem 0.15rem; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Toast -->
+<div id="toast" class="toast"><span id="toastMsg">تم!</span></div>
+
+<!-- ========== سايدبار ========== -->
+<aside class="sidebar">
+    <div class="logo">
+        <h1>POP ADMIN</h1>
+        <span>v4.0</span>
+    </div>
+    
+    <button class="nav-tab active" onclick="switchTab('dashboard')">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+        <span>الرئيسية</span>
+    </button>
+    
+    <button class="nav-tab" onclick="switchTab('users')">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+        <span>المستخدمين</span>
+        <span class="badge" id="usersBadge">0</span>
+    </button>
+    
+    <button class="nav-tab" onclick="switchTab('deposits')">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+        <span>الإيداعات</span>
+        <span class="badge" id="depositsBadge">0</span>
+    </button>
+    
+    <button class="nav-tab" onclick="switchTab('withdrawals')">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg>
+        <span>السحوبات</span>
+        <span class="badge" id="withdrawalsBadge">0</span>
+    </button>
+    
+    <button class="nav-tab" onclick="switchTab('plans')">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+        <span>الخطط</span>
+    </button>
+    
+    <button class="nav-tab" onclick="switchTab('settings')">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+        <span>الإعدادات</span>
+    </button>
+</aside>
+
+<!-- ========== المحتوى الرئيسي ========== -->
+<main class="main-content">
+
+    <!-- ======== DASHBOARD ======== -->
+    <section id="tab-dashboard" class="tab-content active">
+        <div class="flex-between mb-4">
+            <h1 class="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-emerald-400">📊 لوحة التحكم</h1>
+            <span class="text-xs text-gray-400 font-mono">آخر تحديث: <span id="lastUpdate">--</span></span>
+        </div>
+        
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+            <div class="stat-card"><p class="text-xs text-gray-400">👥 المستخدمين</p><p class="stat-number text-cyan-400" id="dashUsers">0</p></div>
+            <div class="stat-card"><p class="text-xs text-gray-400">💰 الإيداعات</p><p class="stat-number text-emerald-400" id="dashDeposits">0</p></div>
+            <div class="stat-card"><p class="text-xs text-gray-400">📤 السحوبات</p><p class="stat-number text-purple-400" id="dashWithdrawals">0</p></div>
+            <div class="stat-card"><p class="text-xs text-gray-400">⏳ قيد المراجعة</p><p class="stat-number text-yellow-400" id="dashPending">0</p></div>
+        </div>
+        
+        <div class="glass-panel">
+            <h3 class="text-sm font-bold text-gray-300 mb-3">📋 آخر النشاطات</h3>
+            <div id="recentActivity" class="text-xs text-gray-400 space-y-2">
+                <p class="text-center py-4">جاري التحميل...</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ======== USERS ======== -->
+    <section id="tab-users" class="tab-content">
+        <div class="flex-between mb-4">
+            <h2 class="text-lg font-black text-cyan-400">👥 إدارة المستخدمين</h2>
+            <button onclick="openUserModal()" class="btn-add">+ إضافة مستخدم</button>
+        </div>
+        
+        <div class="glass-panel">
+            <div class="flex-between mb-3">
+                <input type="text" id="userSearch" class="search-box" placeholder="🔍 بحث..." oninput="filterUsers()">
+                <span class="text-xs text-gray-400" id="usersCount">0 مستخدم</span>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>#</th><th>البريد</th><th>تيليجرام</th><th>الرصيد</th><th>الإحالات</th><th>الحالة</th><th>تحكم</th></tr></thead>
+                    <tbody id="usersTableBody"><tr><td colspan="7" class="text-center text-gray-500 py-4">جاري التحميل...</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- ======== DEPOSITS ======== -->
+    <section id="tab-deposits" class="tab-content">
+        <div class="flex-between mb-4">
+            <h2 class="text-lg font-black text-emerald-400">💰 إدارة الإيداعات</h2>
+            <span class="text-xs text-gray-400" id="depositsPendingCount">قيد المراجعة: 0</span>
+        </div>
+        
+        <div class="glass-panel">
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>#</th><th>المستخدم</th><th>المبلغ</th><th>الشبكة</th><th>TxID</th><th>الحالة</th><th>تحكم</th></tr></thead>
+                    <tbody id="depositsTableBody"><tr><td colspan="7" class="text-center text-gray-500 py-4">جاري التحميل...</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- ======== WITHDRAWALS ======== -->
+    <section id="tab-withdrawals" class="tab-content">
+        <div class="flex-between mb-4">
+            <h2 class="text-lg font-black text-purple-400">📤 إدارة السحوبات</h2>
+            <span class="text-xs text-gray-400" id="withdrawalsPendingCount">قيد المراجعة: 0</span>
+        </div>
+        
+        <div class="glass-panel">
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>#</th><th>المستخدم</th><th>المبلغ</th><th>العنوان</th><th>الشبكة</th><th>الحالة</th><th>تحكم</th></tr></thead>
+                    <tbody id="withdrawalsTableBody"><tr><td colspan="7" class="text-center text-gray-500 py-4">جاري التحميل...</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- ======== PLANS ======== -->
+    <section id="tab-plans" class="tab-content">
+        <div class="flex-between mb-4">
+            <h2 class="text-lg font-black text-yellow-400">📈 إدارة الخطط</h2>
+            <button onclick="openPlanModal()" class="btn-add">+ إضافة خطة</button>
+        </div>
+        
+        <div class="glass-panel">
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>#</th><th>الاسم</th><th>النسبة</th><th>المدة</th><th>الحد الأدنى</th><th>الحد الأقصى</th><th>ترحيبية</th><th>الحالة</th><th>تحكم</th></tr></thead>
+                    <tbody id="plansTableBody"><tr><td colspan="9" class="text-center text-gray-500 py-4">جاري التحميل...</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- ======== SETTINGS ======== -->
+    <section id="tab-settings" class="tab-content">
+        <div class="flex-between mb-4">
+            <h2 class="text-lg font-black text-cyan-400">⚙️ إعدادات النظام</h2>
+            <span class="text-xs text-gray-400">تعديل الإعدادات ينعكس فوراً</span>
+        </div>
+        
+        <div class="glass-panel">
+            <form id="settingsForm" onsubmit="saveSettings(event)">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                    <div><label class="text-xs text-gray-400">عمولة المستوى 1 (%)</label><input type="number" id="s_tier1" class="modal-input" step="0.1"></div>
+                    <div><label class="text-xs text-gray-400">عمولة المستوى 2 (%)</label><input type="number" id="s_tier2" class="modal-input" step="0.1"></div>
+                    <div><label class="text-xs text-gray-400">عمولة المستوى 3 (%)</label><input type="number" id="s_tier3" class="modal-input" step="0.1"></div>
+                    <div><label class="text-xs text-gray-400">رسوم السحب (%)</label><input type="number" id="s_withdrawFee" class="modal-input" step="0.1"></div>
+                    <div><label class="text-xs text-gray-400">الحد الأدنى للسحب ($)</label><input type="number" id="s_minWithdraw" class="modal-input" step="0.01"></div>
+                    <div><label class="text-xs text-gray-400">رابط التسجيل الأساسي</label><input type="text" id="s_registerUrl" class="modal-input" dir="ltr"></div>
+                </div>
+
+                <h4 class="text-sm font-bold text-gray-300 mb-2">🏦 عناوين المحافظ وحالة الشبكات</h4>
+                <div class="network-grid-settings">
+                    <div class="network-item">
+                        <label>USDT (TRC20)</label>
+                        <input type="text" id="s_trc20" class="modal-input" dir="ltr" placeholder="T...">
+                        <select id="s_trc20_status" class="network-status-select">
+                            <option value="active">🟢 نشطة</option>
+                            <option value="maintenance">🟡 صيانة</option>
+                            <option value="inactive">🔴 غير نشطة</option>
+                        </select>
+                    </div>
+                    <div class="network-item">
+                        <label>USDT (BEP20)</label>
+                        <input type="text" id="s_bep20" class="modal-input" dir="ltr" placeholder="0x...">
+                        <select id="s_bep20_status" class="network-status-select">
+                            <option value="active">🟢 نشطة</option>
+                            <option value="maintenance">🟡 صيانة</option>
+                            <option value="inactive">🔴 غير نشطة</option>
+                        </select>
+                    </div>
+                    <div class="network-item">
+                        <label>USDT (SOLANA)</label>
+                        <input type="text" id="s_solana" class="modal-input" dir="ltr" placeholder="SOL Address">
+                        <select id="s_solana_status" class="network-status-select">
+                            <option value="active">🟢 نشطة</option>
+                            <option value="maintenance">🟡 صيانة</option>
+                            <option value="inactive">🔴 غير نشطة</option>
+                        </select>
+                    </div>
+                    <div class="network-item">
+                        <label>USDT (POLYGON)</label>
+                        <input type="text" id="s_polygon" class="modal-input" dir="ltr" placeholder="0x...">
+                        <select id="s_polygon_status" class="network-status-select">
+                            <option value="active">🟢 نشطة</option>
+                            <option value="maintenance">🟡 صيانة</option>
+                            <option value="inactive">🔴 غير نشطة</option>
+                        </select>
+                    </div>
+                    <div class="network-item">
+                        <label>USDT (ARBITRUM)</label>
+                        <input type="text" id="s_arbitrum" class="modal-input" dir="ltr" placeholder="0x...">
+                        <select id="s_arbitrum_status" class="network-status-select">
+                            <option value="active">🟢 نشطة</option>
+                            <option value="maintenance">🟡 صيانة</option>
+                            <option value="inactive">🔴 غير نشطة</option>
+                        </select>
+                    </div>
+                    <div class="network-item">
+                        <label>USDT (AVALANCHE)</label>
+                        <input type="text" id="s_avalanche" class="modal-input" dir="ltr" placeholder="0x...">
+                        <select id="s_avalanche_status" class="network-status-select">
+                            <option value="active">🟢 نشطة</option>
+                            <option value="maintenance">🟡 صيانة</option>
+                            <option value="inactive">🔴 غير نشطة</option>
+                        </select>
+                    </div>
+                    <div class="network-item">
+                        <label>USDT (OPTIMISM)</label>
+                        <input type="text" id="s_optimism" class="modal-input" dir="ltr" placeholder="0x...">
+                        <select id="s_optimism_status" class="network-status-select">
+                            <option value="active">🟢 نشطة</option>
+                            <option value="maintenance">🟡 صيانة</option>
+                            <option value="inactive">🔴 غير نشطة</option>
+                        </select>
+                    </div>
+                    <div class="network-item">
+                        <label>USDT (TON)</label>
+                        <input type="text" id="s_ton" class="modal-input" dir="ltr" placeholder="TON Address">
+                        <select id="s_ton_status" class="network-status-select">
+                            <option value="active">🟢 نشطة</option>
+                            <option value="maintenance">🟡 صيانة</option>
+                            <option value="inactive">🔴 غير نشطة</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-add mt-3 w-full py-2">💾 حفظ جميع الإعدادات</button>
+            </form>
+        </div>
+    </section>
+
+</main>
+
+<!-- ========== مودال المستخدمين

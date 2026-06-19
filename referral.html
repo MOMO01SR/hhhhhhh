@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" translate="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="google" content="notranslate">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://fonts.googleapis.com https://fonts.gstatic.com https://cdn.jsdelivr.net https://*.supabase.co https://images.unsplash.com">
+    <meta http-equiv="X-XSS-Protection" content="1; mode=block">
+    <meta name="theme-color" content="#020617">
+    <title>POP Capital | فريق الإحالة</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <style>
+        :root {
+            --primary: #06b6d4; --accent: #10b981; --dark: #020617; 
+            --surface: rgba(11, 19, 43, 0.75); --danger: #ef4444; --purple: #a855f7;
+            --proxy-color: #3b82f6;
+        }
+
+        * { user-select: none; -webkit-user-select: none; -webkit-user-drag: none; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: var(--dark); color: white; margin: 0;
+            background-image: 
+                radial-gradient(circle at 0% 0%, rgba(168, 85, 247, 0.08), transparent 40%),
+                radial-gradient(circle at 100% 100%, rgba(6, 182, 212, 0.05), transparent 40%),
+                repeating-linear-gradient(45deg, rgba(255,255,255,0.01) 0px, rgba(255,255,255,0.01) 1px, transparent 1px, transparent 10px);
+            background-attachment: fixed; padding-bottom: 7rem; overflow-x: hidden;
+        }
+
+        @media print { body { display: none; } }
+
+        #initLoader { 
+            position: fixed; inset: 0; background: rgba(2, 6, 23, 0.98); backdrop-filter: blur(20px); z-index: 99999; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1); 
+        }
+        .square-loader {
+            width: 90px; height: 90px;
+            background: rgba(168, 85, 247, 0.03); border: 2px solid rgba(168, 85, 247, 0.3);
+            border-radius: 12px; display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 0 30px rgba(168, 85, 247, 0.15);
+            animation: squarePulse 2.5s ease-in-out infinite alternate;
+        }
+        @keyframes squarePulse {
+            0% { box-shadow: 0 0 15px rgba(168, 85, 247, 0.15); }
+            100% { box-shadow: 0 0 40px rgba(168, 85, 247, 0.5); }
+        }
+        .circle-spinner {
+            width: 55px; height: 55px; border-radius: 50%;
+            border: 3px solid transparent;
+            border-top-color: var(--purple); border-right-color: var(--primary);
+            border-bottom-color: var(--proxy-color); border-left-color: rgba(255,255,255,0.2);
+            animation: spinClockwise 1s linear infinite;
+        }
+        @keyframes spinClockwise { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .terminal-status { 
+            font-family: monospace; color: var(--purple); font-size: 0.8rem; 
+            letter-spacing: 3px; text-transform: uppercase; margin-top: 2rem; 
+            text-align: center; font-weight: bold; text-shadow: 0 0 10px rgba(168, 85, 247, 0.4); 
+        }
+
+        .scan-line {
+            position: fixed; top: 0; left: 0; width: 100%; height: 2px;
+            background: rgba(168, 85, 247, 0.5); box-shadow: 0 0 15px rgba(168, 85, 247, 0.8);
+            animation: scan 3s linear infinite; z-index: 9998; pointer-events: none;
+        }
+        @keyframes scan { 0% { top: 0; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
+
+        #mainApp { display: none; width: 100%; animation: fadeIn 0.8s ease forwards; position: relative; z-index: 10; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .glass-panel {
+            background: linear-gradient(145deg, rgba(15, 23, 42, 0.9), rgba(2, 6, 15, 0.95));
+            backdrop-filter: blur(35px); -webkit-backdrop-filter: blur(35px);
+            border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 2rem;
+            box-shadow: 0 35px 65px rgba(0,0,0,0.8), inset 0 2px 0px rgba(255,255,255,0.05);
+            position: relative; overflow: hidden;
+        }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.8rem; margin-bottom: 1.5rem; }
+        .stat-card {
+            background: rgba(4, 9, 26, 0.65); border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 1.5rem; padding: 1.2rem; text-align: center;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5); border-top: 1px solid rgba(168, 85, 247, 0.2);
+        }
+        .stat-val { font-family: monospace; font-weight: 900; font-size: 1.5rem; margin-top: 0.3rem; }
+
+        .copy-box {
+            background: rgba(0,0,0,0.6); border: 1px dashed rgba(168, 85, 247, 0.4);
+            border-radius: 1rem; padding: 0.5rem; display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 1.2rem; transition: 0.3s;
+        }
+        .copy-box:focus-within { border-color: var(--purple); background: rgba(168, 85, 247, 0.05); }
+        .copy-input {
+            background: transparent; border: none; color: white; font-family: monospace;
+            font-size: 0.85rem; width: 100%; outline: none; padding-right: 0.5rem; letter-spacing: 1px;
+        }
+        .copy-btn {
+            background: linear-gradient(135deg, rgba(168, 85, 247, 0.2), rgba(168, 85, 247, 0.5)); 
+            color: white; padding: 0.7rem 1.2rem; border-radius: 0.8rem; font-weight: 800; font-size: 0.7rem;
+            transition: all 0.3s; display: flex; align-items: center; gap: 0.3rem; 
+            border: 1px solid rgba(168,85,247,0.5); cursor: pointer; white-space: nowrap;
+        }
+        .copy-btn:hover { background: var(--purple); box-shadow: 0 0 15px rgba(168,85,247,0.4); transform: scale(1.05); }
+
+        .share-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.8rem; margin-top: 0.5rem; }
+        .share-btn {
+            display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+            padding: 0.9rem; border-radius: 1rem; font-weight: 800; font-size: 0.8rem;
+            text-decoration: none; transition: 0.3s; border: 1px solid transparent;
+        }
+        .share-telegram { background: rgba(56, 189, 248, 0.1); color: #38bdf8; border-color: rgba(56, 189, 248, 0.2); }
+        .share-whatsapp { background: rgba(34, 197, 94, 0.1); color: #22c55e; border-color: rgba(34, 197, 94, 0.2); }
+
+        .tier-container { display: flex; flex-direction: column; gap: 0.6rem; }
+        .tier-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 1rem; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.03);
+            border-radius: 1.2rem; position: relative; overflow: hidden;
+        }
+        .tier-row::before { 
+            content: ''; position: absolute; right: 0; top: 0; bottom: 0; 
+            width: 4px; background: var(--purple); 
+        }
+        .tier-badge { 
+            background: rgba(168, 85, 247, 0.15); border: 1px solid rgba(168, 85, 247, 0.3); 
+            color: #c084fc; padding: 0.3rem 0.8rem; border-radius: 0.6rem; 
+            font-size: 0.8rem; font-weight: 900; font-family: monospace; 
+        }
+
+        .toast-notification {
+            position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-30px);
+            background: rgba(168, 85, 247, 0.95); border: 1px solid #d8b4fe;
+            color: white; font-weight: 800; padding: 0.8rem 1.5rem; border-radius: 2rem;
+            box-shadow: 0 10px 30px rgba(168, 85, 247, 0.4); backdrop-filter: blur(10px);
+            z-index: 99999; opacity: 0; pointer-events: none; transition: all 0.4s;
+            display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+        }
+        .toast-notification.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+        .bottom-nav {
+            position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+            width: 100%; max-width: 512px; background: rgba(2, 6, 15, 0.95); backdrop-filter: blur(40px);
+            border-top: 1px solid rgba(255, 255, 255, 0.08); border-radius: 2.5rem 2.5rem 0 0;
+            display: flex; justify-content: space-around; align-items: center;
+            padding: 1rem 0.5rem 1.5rem 0.5rem; z-index: 1000;
+            box-shadow: 0 -20px 40px rgba(0,0,0,0.7);
+        }
+        .nav-item { display: flex; flex-direction: column; align-items: center; gap: 0.4rem; color: #6b7280; text-decoration: none; transition: all 0.3s; width: 20%; }
+        .nav-item.active { color: var(--purple); }
+        .nav-item svg { width: 24px; height: 24px; transition: all 0.3s; }
+        .nav-item.active svg { transform: translateY(-4px); filter: drop-shadow(0 0 10px rgba(168, 85, 247, 0.8)); }
+        .nav-label { font-size: 0.7rem; font-weight: 800; }
+    </style>
+</head>
+<body class="max-w-lg mx-auto relative min-h-screen px-4 pt-5">
+
+    <div class="scan-line"></div>
+
+    <!-- لودر -->
+    <div id="initLoader">
+        <div class="square-loader"><div class="circle-spinner"></div></div>
+        <div id="termText" class="terminal-status">التحقق من سلامة العقدة...</div>
+    </div>
+
+    <!-- Toast -->
+    <div id="customToast" class="toast-notification">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+        <span id="toastMessage">تم النسخ بنجاح!</span>
+    </div>
+
+    <!-- التطبيق الرئيسي -->
+    <div id="mainApp">
+        <header class="flex justify-between items-center mb-6">
+            <div class="flex items-center gap-3">
+                <div class="w-14 h-14 rounded-2xl border-2 border-purple-500/40 p-0.5 bg-gradient-to-br from-purple-900 to-black shadow-lg shadow-purple-900/40 overflow-hidden cursor-pointer relative flex items-center justify-center">
+                    <img src="https://images.unsplash.com/photo-1618044733300-9472054094ee?auto=format&fit=crop&w=120&q=80" class="w-full h-full object-cover rounded-xl" alt="POP Logo" loading="lazy" onerror="this.style.display='none'">
+                    <div class="absolute bottom-0 right-0 w-3 h-3 bg-purple-500 border-2 border-slate-900 rounded-full"></div>
+                </div>
+                <div>
+                    <h1 class="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-purple-200 to-purple-500 tracking-wider">TEAM NODE</h1>
+                    <div class="flex items-center gap-2 mt-1">
+                        <span class="proxy-badge text-[9px] text-purple-400 font-mono font-bold tracking-widest uppercase px-2 py-0.5 rounded-md flex items-center gap-1">
+                            <span id="proxyNodeInfo">ENCRYPTED_TUNNEL</span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <p class="text-[9px] text-gray-400 uppercase tracking-widest font-bold">حجم الفريق</p>
+                <p class="stat-val text-white" id="teamSize">0</p>
+            </div>
+            <div class="stat-card">
+                <p class="text-[9px] text-gray-400 uppercase tracking-widest font-bold">أرباح الإحالة</p>
+                <p class="stat-val text-emerald-400">$<span id="teamCommissions">0.00</span></p>
+            </div>
+        </div>
+
+        <div class="glass-panel p-6 mb-6">
+            <h3 class="text-base font-black text-white mb-4 relative z-10">🔗 رابط الإحالة الخاص بك</h3>
+            
+            <!-- كود الإحالة -->
+            <label class="block text-[10px] text-purple-400 font-bold uppercase tracking-widest px-1 mb-2">كود الإحالة</label>
+            <div class="copy-box relative z-10">
+                <input type="text" id="referralCodeInput" readonly class="copy-input font-black text-xl text-white text-center" value="جاري الربط...">
+                <button onclick="copyData('referralCodeInput', 'الكود')" class="copy-btn">نسخ</button>
+            </div>
+
+            <!-- رابط التسجيل (للقراءة فقط) -->
+            <label class="block text-[10px] text-gray-300 font-bold uppercase tracking-widest px-1 mb-2 mt-4">رابط التسجيل المباشر</label>
+            <div class="copy-box relative z-10">
+                <input type="text" id="referralLinkInput" readonly class="copy-input text-gray-300" dir="ltr" value="جاري الربط...">
+                <button onclick="copyData('referralLinkInput', 'الرابط')" class="copy-btn" style="background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2);">نسخ</button>
+            </div>
+
+            <!-- أزرار المشاركة -->
+            <div class="share-grid relative z-10 mt-4">
+                <a href="#" id="shareTelegram" target="_blank" rel="noopener" class="share-btn share-telegram">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.19-.08-.05-.19-.02-.27 0-.12.03-1.97 1.25-5.55 3.67-.53.36-1.01.54-1.44.53-.47-.01-1.38-.27-2.05-.49-.82-.27-1.47-.41-1.41-.87.03-.23.36-.47.99-.71 3.88-1.69 6.47-2.8 7.76-3.34 3.69-1.55 4.45-1.81 4.95-1.82.11 0 .35.03.48.14.11.09.14.22.15.34-.01.07-.01.16-.03.22z"/></svg>
+                    تيليجرام
+                </a>
+                <a href="#" id="shareWhatsapp" target="_blank" rel="noopener" class="share-btn share-whatsapp">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884"/></svg>
+                    واتساب
+                </a>
+            </div>
+        </div>
+
+        <!-- هيكلية العمولات (يتم تحديثها تلقائياً من لوحة الإدارة) -->
+        <h3 class="text-sm font-bold text-gray-100 border-r-2 border-purple-500 pr-2 mb-3">هيكلية أرباح الفريق</h3>
+        <div class="tier-container mb-6" id="tierContainer">
+            <!-- سيتم بناؤها ديناميكياً -->
+        </div>
+    </div>
+
+    <!-- شريط التنقل -->
+    <nav class="bottom-nav">
+        <a href="dashboard.html" class="nav-item"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg><span class="nav-label">الرئيسية</span></a>
+        <a href="plans.html" class="nav-item"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg><span class="nav-label">الاستثمار</span></a>
+        <a href="daily.html" class="nav-item relative z-10"><div class="bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600 rounded-full p-3.5 shadow-[0_0_25px_rgba(16,185,129,0.6)] text-white transform -translate-y-6 border-[5px] border-[#020617]"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"></path></svg></div><span class="nav-label text-emerald-400 mt-[-18px] font-black">مكافأة</span></a>
+        <a href="referral.html" class="nav-item active"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg><span class="nav-label">الفريق</span></a>
+        <a href="profile.html" class="nav-item"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg><span class="nav-label">حسابي</span></a>
+    </nav>
+
+    <!-- روابط وهمية -->
+    <div style="position:absolute; opacity:0; pointer-events:none; width:1px; height:1px; overflow:hidden;">
+        <a href="https://referral.popcapital.com/fake1">Fake Referral</a>
+    </div>
+
+    <script>
+        // ========= إعدادات Supabase =========
+        const supabaseUrl = 'https://aqoufnmdhopmdobknczg.supabase.co';
+        const supabaseKey = 'sb_publishable_BvmWY2L-ZfwkZloJ_uPaDw_9wTq84D-';
+        const _supabase = window.supabase ? window.supabase.createClient(supabaseUrl, supabaseKey) : null;
+
+        // ========= طبقات حماية متطورة =========
+        document.addEventListener('contextmenu', e => e.preventDefault());
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'F12' || 
+                (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) ||
+                (e.ctrlKey && (e.key === 'u' || e.key === 's'))) {
+                e.preventDefault();
+                return false;
+            }
+        });
+        document.addEventListener('dragstart', e => e.preventDefault());
+        document.addEventListener('drop', e => e.preventDefault());
+        setInterval(() => { console.clear(); }, 1000);
+        console.log("%c⚠️ تحذير أمني - أي محاولة للعبث مراقبة", "color: red; font-size: 20px;");
+
+        // كشف أدوات المطور
+        function detectDevTools() {
+            const threshold = 160;
+            if (window.outerWidth - window.innerWidth > threshold || 
+                window.outerHeight - window.innerHeight > threshold) {
+                document.body.innerHTML = `<div style="display:flex; align-items:center; justify-content:center; height:100vh; background:#020617; color:red; font-family:Cairo; font-size:1.5rem; text-align:center; direction:rtl;">⚠️ تم اكتشاف محاولة فحص! <br> الصفحة محظورة لأسباب أمنية.</div>`;
+                clearInterval(devToolsInterval);
+            }
+        }
+        const devToolsInterval = setInterval(detectDevTools, 500);
+
+        let userProfileData = null;
+        const proxyNodes = ["NODE_US_EAST", "NODE_FRANKFURT", "NODE_TOKYO", "NODE_SINGAPORE"];
+
+        // ========= تسلسل التحميل =========
+        const bootMessages = ["التحقق من سلامة العقدة...", "إنشاء نفق آمن...", "فحص الجلسات النشطة...", "تجهيز واجهة الدخول..."];
+        let bootIndex = 0;
+        const termText = document.getElementById('termText');
+        const bootInterval = setInterval(() => {
+            if (bootIndex < bootMessages.length) { if(termText) termText.innerText = bootMessages[bootIndex]; bootIndex++; }
+        }, 1000);
+
+        function activateCurrentNavigationTab() {
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            document.getElementById('nav-referral')?.classList.add('active');
+        }
+
+        // بناء هيكلية العمولات من الإعدادات
+        function buildTierStructure(settings) {
+            const tier1Percent = settings.find(s => s.key === 'referral_tier1_percent')?.value || '10';
+            const tier2Percent = settings.find(s => s.key === 'referral_tier2_percent')?.value || '5';
+            const tier3Percent = settings.find(s => s.key === 'referral_tier3_percent')?.value || '2';
+            const tier1Required = settings.find(s => s.key === 'referral_tier1_required')?.value || '0';
+            const tier2Required = settings.find(s => s.key === 'referral_tier2_required')?.value || '5';
+            const tier3Required = settings.find(s => s.key === 'referral_tier3_required')?.value || '10';
+
+            const container = document.getElementById('tierContainer');
+            container.innerHTML = `
+                <div class="tier-row">
+                    <div>
+                        <h4 class="text-xs font-bold text-white">مستوى 1 (مباشر)</h4>
+                        <p class="text-[9px] text-gray-400 mt-1">${tier1Required > 0 ? `تحتاج ${tier1Required} مشتركين` : 'المدعوون عبر رابطك'}</p>
+                    </div>
+                    <div class="tier-badge">${tier1Percent}%</div>
+                </div>
+                <div class="tier-row">
+                    <div>
+                        <h4 class="text-xs font-bold text-white opacity-80">مستوى 2 (غير مباشر)</h4>
+                        <p class="text-[9px] text-gray-400 mt-1">${tier2Required > 0 ? `تحتاج ${tier2Required} مشتركين` : 'مدعوون من فريقك'}</p>
+                    </div>
+                    <div class="tier-badge opacity-80">${tier2Percent}%</div>
+                </div>
+                <div class="tier-row">
+                    <div>
+                        <h4 class="text-xs font-bold text-white opacity-60">مستوى 3 (أجيال)</h4>
+                        <p class="text-[9px] text-gray-400 mt-1">${tier3Required > 0 ? `تحتاج ${tier3Required} مشتركين` : 'مدعوون من المستوى الثاني'}</p>
+                    </div>
+                    <div class="tier-badge opacity-60">${tier3Percent}%</div>
+                </div>
+            `;
+        }
+
+        async function secureProxyAuth() {
+            activateCurrentNavigationTab();
+            const localSession = localStorage.getItem('user_session_plain');
+            if (!localSession || !_supabase) { clearInterval(bootInterval); window.location.replace('login.html'); return; }
+            const parsedUser = JSON.parse(localSession);
+
+            try {
+                const { data: profile, error } = await _supabase.from('users_profiles').select('*').eq('email', parsedUser.email).maybeSingle();
+                if (error || !profile || profile.status !== 'active') {
+                    localStorage.removeItem('user_session_plain');
+                    clearInterval(bootInterval);
+                    window.location.replace('login.html');
+                    return;
+                }
+
+                userProfileData = profile;
+                localStorage.setItem('user_session_plain', JSON.stringify(profile));
+
+                let myInviteCode = profile.invite_code;
+                if (!myInviteCode || myInviteCode.trim() === "") {
+                    myInviteCode = String(Math.floor(10000 + Math.random() * 90000));
+                    await _supabase.from('users_profiles').update({ invite_code: myInviteCode }).eq('email', profile.email);
+                    profile.invite_code = myInviteCode;
+                    localStorage.setItem('user_session_plain', JSON.stringify(profile));
+                }
+
+                // جلب جميع الإعدادات
+                const { data: settings } = await _supabase.from('system_settings').select('*');
+
+                // بناء هيكلية العمولات من الإعدادات
+                if (settings) buildTierStructure(settings);
+
+                // جلب رابط التسجيل الأساسي
+                let baseRegisterUrl = 'register.html';
+                if (settings) {
+                    const baseUrlSetting = settings.find(s => s.key === 'base_register_url');
+                    if (baseUrlSetting && baseUrlSetting.value) baseRegisterUrl = baseUrlSetting.value;
+                }
+
+                const fullLink = baseRegisterUrl.includes('http') 
+                    ? `${baseRegisterUrl}?invite_code=${myInviteCode}`
+                    : `${window.location.origin}/${baseRegisterUrl}?invite_code=${myInviteCode}`;
+
+                document.getElementById('referralCodeInput').value = myInviteCode;
+                document.getElementById('referralLinkInput').value = fullLink;
+                document.getElementById('teamCommissions').innerText = parseFloat(profile.total_commissions || 0).toFixed(2);
+                document.getElementById('proxyNodeInfo').innerText = "PROXY: " + proxyNodes[Math.floor(Math.random() * proxyNodes.length)];
+
+                updateShareLinks(fullLink, myInviteCode);
+
+                const { count } = await _supabase.from('users_profiles').select('*', { count: 'exact', head: true }).eq('referred_by', myInviteCode);
+                document.getElementById('teamSize').innerText = count || 0;
+
+                setTimeout(() => {
+                    clearInterval(bootInterval);
+                    const loader = document.getElementById('initLoader');
+                    if(loader) { loader.style.opacity = '0'; setTimeout(() => { loader.style.display = 'none'; document.getElementById('mainApp').style.display = 'block'; }, 800); }
+                }, 5000);
+
+            } catch (err) { console.error(err); clearInterval(bootInterval); window.location.replace('login.html'); }
+        }
+
+        function updateShareLinks(link, code) {
+            const msg = encodeURIComponent(`انضم إلى POP Capital واحصل على أرباح قوية! كود الإحالة: ${code}\nالرابط: ${link}`);
+            document.getElementById('shareTelegram').href = `https://t.me/share/url?url=${link}&text=${msg}`;
+            document.getElementById('shareWhatsapp').href = `https://api.whatsapp.com/send?text=${msg}`;
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('customToast');
+            document.getElementById('toastMessage').innerText = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2500);
+        }
+
+        function copyData(elementId, typeName) {
+            const inputElement = document.getElementById(elementId);
+            if (!inputElement) return;
+            const value = inputElement.value;
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(value).then(() => showToast(`تم نسخ ${typeName} بنجاح!`)).catch(() => {
+                    inputElement.select(); inputElement.setSelectionRange(0, 99999); document.execCommand('copy'); showToast(`تم نسخ ${typeName} بنجاح!`);
+                });
+            } else {
+                inputElement.select(); inputElement.setSelectionRange(0, 99999); document.execCommand('copy'); showToast(`تم نسخ ${typeName} بنجاح!`);
+            }
+            window.getSelection().removeAllRanges();
+        }
+
+        window.onload = secureProxyAuth;
+    </script>
+</body>
+</html>

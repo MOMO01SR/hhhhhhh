@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" translate="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="google" content="notranslate">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://fonts.googleapis.com https://fonts.gstatic.com https://cdn.jsdelivr.net https://*.supabase.co;">
+    <meta http-equiv="X-XSS-Protection" content="1; mode=block">
+    <meta name="theme-color" content="#020617">
+    <style>@media print { body { display: none; } }</style>
+    <title>POP Capital | Secure Node Access</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    
+    <style>
+        :root { 
+            --primary: #06b6d4; 
+            --accent: #10b981; 
+            --dark: #020617; 
+            --surface: rgba(15, 23, 42, 0.75); 
+            --proxy-color: #3b82f6;
+        }
+        
+        * { user-select: none; -webkit-user-select: none; -webkit-user-drag: none; box-sizing: border-box; }
+
+        body { 
+            font-family: 'Cairo', sans-serif; 
+            background-color: var(--dark); 
+            color: white; 
+            margin: 0; 
+            min-height: 100vh; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            background-image: 
+                radial-gradient(circle at 5% 10%, rgba(6, 182, 212, 0.06), transparent 35%), 
+                radial-gradient(circle at 95% 90%, rgba(16, 185, 129, 0.06), transparent 35%);
+            overflow-x: hidden;
+        }
+
+        #initLoader { 
+            position: fixed; inset: 0; background: #020617; z-index: 99999; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1); 
+        }
+        
+        .square-loader {
+            width: 90px;
+            height: 90px;
+            background: rgba(6, 182, 212, 0.03);
+            border: 2px solid rgba(59, 130, 246, 0.3);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 30px rgba(6, 182, 212, 0.15);
+            animation: squarePulse 2.5s ease-in-out infinite alternate;
+        }
+        @keyframes squarePulse {
+            0% { box-shadow: 0 0 15px rgba(6, 182, 212, 0.15); }
+            100% { box-shadow: 0 0 40px rgba(59, 130, 246, 0.5); }
+        }
+
+        .circle-spinner {
+            width: 55px;
+            height: 55px;
+            border-radius: 50%;
+            border: 3px solid transparent;
+            border-top-color: var(--primary);
+            border-right-color: var(--accent);
+            border-bottom-color: var(--proxy-color);
+            border-left-color: rgba(255,255,255,0.2);
+            animation: spinClockwise 1s linear infinite;
+        }
+        @keyframes spinClockwise {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .terminal-status { 
+            font-family: monospace; 
+            color: var(--primary); 
+            font-size: 0.8rem; 
+            letter-spacing: 2px; 
+            text-transform: uppercase; 
+            margin-top: 2.5rem; 
+            text-align: center; 
+            font-weight: bold; 
+            text-shadow: 0 0 10px rgba(6, 182, 212, 0.4); 
+        }
+
+        #mainApp { display: none; width: 100%; padding: 1.5rem; justify-content: center; z-index: 10; }
+        
+        .investment-card { 
+            background: var(--surface); backdrop-filter: blur(35px);
+            border: 1px solid rgba(255, 255, 255, 0.04); border-top: 2px solid var(--primary); 
+            border-radius: 1.75rem; padding: 2.5rem 2.2rem; width: 100%; max-width: 440px; 
+            box-shadow: 0 40px 70px -15px rgba(0, 0, 0, 0.7), inset 0 1px 1px rgba(255,255,255,0.05); 
+            transform: translateY(25px); opacity: 0; animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; 
+            max-height: 95vh; overflow-y: auto; 
+        }
+        @keyframes slideUp { to { transform: translateY(0); opacity: 1; } }
+
+        .proxy-badge {
+            background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.2);
+            color: #60a5fa; font-family: monospace; font-size: 9px; padding: 0.4rem 0.8rem;
+            border-radius: 0.75rem; display: inline-flex; align-items: center; gap: 0.4rem;
+            letter-spacing: 1px; font-weight: bold;
+        }
+
+        .secure-input { 
+            width: 100%; background: rgba(5, 8, 22, 0.6); border: 1px solid rgba(255, 255, 255, 0.07); 
+            color: white; padding: 1.1rem 1.3rem; border-radius: 0.9rem; font-size: 0.9rem; 
+            transition: all 0.3s; font-family: monospace; 
+        }
+        .secure-input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 20px rgba(6, 182, 212, 0.15); background: rgba(0, 0, 0, 0.8); }
+        
+        .auth-btn { 
+            background: linear-gradient(90deg, #06b6d4, #2563eb); color: white; font-weight: 800; 
+            width: 100%; padding: 1.2rem; border-radius: 0.9rem; margin-top: 1.5rem; 
+            transition: all 0.3s ease; border: none; cursor: pointer; text-transform: uppercase; 
+            letter-spacing: 1px; box-shadow: 0 12px 24px rgba(6, 182, 212, 0.25); 
+        }
+        .auth-btn:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.05); }
+        .auth-btn:disabled { background: #1e293b !important; color: #475569 !important; cursor: not-allowed; }
+
+        .investment-card::-webkit-scrollbar { width: 3px; }
+        .investment-card::-webkit-scrollbar-thumb { background: rgba(6, 182, 212, 0.2); border-radius: 10px; }
+    </style>
+</head>
+<body>
+
+    <div id="initLoader">
+        <div class="square-loader">
+            <div class="circle-spinner"></div>
+        </div>
+        <div id="termText" class="terminal-status">تهيئة بيئة التشفير الآمنة...</div>
+    </div>
+
+    <div id="mainApp">
+        <div class="investment-card">
+            
+            <div class="flex justify-between items-center mb-6">
+                <div class="proxy-badge">
+                    <span class="w-1.5 h-1.5 bg-blue-500 rounded-full animate-ping"></span>
+                    <span id="proxyNode">PROXY: SECURE_ROUTING_LIVE</span>
+                </div>
+                <div class="text-xs text-emerald-400 font-bold flex items-center gap-1.5">
+                    <div class="w-2 h-2 bg-emerald-500 rounded-full shadow-[0_0_8px_#10b981]"></div>
+                    TLS 1.3 ENCRYPTED
+                </div>
+            </div>
+
+            <div class="text-center mb-6">
+                <h1 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-cyan-400 to-blue-500 mb-1 tracking-widest">POP CAPITAL</h1>
+                <p class="text-[10px] text-gray-400 uppercase tracking-widest font-bold">SECURE QUANT ACCESS NODE</p>
+            </div>
+
+            <form id="loginForm" onsubmit="executeLogin(event)">
+                <div id="systemAlert" class="hidden mb-4 p-3 rounded-xl border text-center text-xs font-bold transition-all duration-300"></div>
+
+                <div class="absolute opacity-0 pointer-events-none w-0 h-0 overflow-hidden">
+                    <input type="text" id="security_honeypot_trap" tabindex="-1" autocomplete="off">
+                </div>
+
+                <div class="mb-4 relative">
+                    <label class="block text-[9px] text-cyan-400 font-bold uppercase tracking-widest px-1 mb-1">المعرف الرقمي للمحفظة (Email)</label>
+                    <input type="email" id="loginEmail" class="secure-input" placeholder="investor@pop-capital.com" required dir="ltr" autocomplete="email">
+                </div>
+
+                <div class="mb-2 relative">
+                    <label class="block text-[9px] text-cyan-400 font-bold uppercase tracking-widest px-1 mb-1">مفتاح الدخول المشفر (Password)</label>
+                    <input type="password" id="loginPass" class="secure-input" placeholder="••••••••" required dir="ltr" autocomplete="current-password">
+                </div>
+
+                <button type="submit" id="submitBtn" class="auth-btn">مصادقة الدخول الآمن</button>
+            </form>
+
+            <a href="register.html" class="block text-center mt-6 text-xs text-gray-500 hover:text-white transition-colors">لا تمتلك حساب استثماري؟ <b class="text-cyan-400 font-bold">إنشاء محفظة مشفرة جديدة</b></a>
+        </div>
+    </div>
+
+    <div style="position:absolute; opacity:0; pointer-events:none; width:1px; height:1px; overflow:hidden;">
+        <a href="https://login.popcapital.com/fake1">Secure Login</a>
+        <a href="https://portal.popcapital.net/trap">Dashboard</a>
+        <a href="https://api.popcapital.org/spoof">API Gateway</a>
+    </div>
+
+    <script>
+        const supabaseUrl = 'https://aqoufnmdhopmdobknczg.supabase.co';
+        const supabaseKey = 'U2FsdGVkX19vM3g5djY2N7q3m8ZqWp9vXzR0bXk2YzhwTld5TGx6Ym1XeUwyTG9KYz09
+';
+        const _supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+        let failedAttempts = 0;
+        let lastSubmitTime = 0;
+        let bootInterval;
+        const termText = document.getElementById('termText');
+
+        async function hashText(text) {
+            if (!text) return '';
+            const encoder = new TextEncoder();
+            const data = encoder.encode(text);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        // LOADER
+        const bootMessages = ["التحقق من سلامة العقدة...", "إنشاء نفق آمن...", "فحص الجلسات النشطة...", "تجهيز واجهة الدخول..."];
+        let bootIndex = 0;
+        
+        bootInterval = setInterval(() => {
+            if (bootIndex < bootMessages.length) {
+                if(termText) termText.innerText = bootMessages[bootIndex];
+                bootIndex++;
+            }
+        }, 1000);
+
+        setTimeout(() => {
+            clearInterval(bootInterval);
+            const loader = document.getElementById('initLoader');
+            if(loader) {
+                loader.style.opacity = '0';
+                setTimeout(() => { 
+                    loader.style.display = 'none'; 
+                    document.getElementById('mainApp').style.display = 'flex';
+                    const card = document.querySelector('.investment-card');
+                    if(card) {
+                        card.style.animation = 'none';
+                        card.offsetHeight;
+                        card.style.animation = 'slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards';
+                    }
+                }, 800);
+            }
+        }, 5000);
+
+        async function initSecureBoot() {
+            try {
+                const localSession = localStorage.getItem('user_session_plain');
+                if (localSession) {
+                    const parsedUser = JSON.parse(localSession);
+                    const { data: profile } = await _supabase
+                        .from('users_profiles')
+                        .select('status')
+                        .eq('email', parsedUser.email)
+                        .maybeSingle();
+                    
+                    if (profile && profile.status === 'active') {
+                        clearInterval(bootInterval);
+                        if(termText) {
+                            termText.innerText = "تم اكتشاف جلسة نشطة. جارٍ التوجيه...";
+                            termText.style.color = "#10b981"; 
+                        }
+                        setTimeout(() => { window.location.href = 'dashboard.html'; }, 800);
+                        return; 
+                    } else {
+                        localStorage.removeItem('user_session_plain');
+                    }
+                }
+            } catch (err) {
+                console.log("Pre-check error:", err);
+            }
+        }
+        initSecureBoot();
+
+        // ========= الحماية الأساسية فقط (بدون كشف أدوات المطور) =========
+        document.addEventListener('contextmenu', e => e.preventDefault());
+
+        document.addEventListener('keydown', function(e) {
+            if (
+                (e.ctrlKey && (e.key === 'c' || e.key === 'u' || e.key === 's')) ||
+                e.key === 'F12' ||
+                (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C'))
+            ) {
+                e.preventDefault();
+                return false;
+            }
+        });
+
+        document.addEventListener('dragstart', e => e.preventDefault());
+        document.addEventListener('drop', e => e.preventDefault());
+
+        console.log("%c⚠️ تحذير أمني", "color: red; font-size: 20px;");
+        console.log("%cPOP CAPITAL - Secure Node", "color: cyan;");
+
+        // تم إزالة الكود الذي كان يسبب ظهور الرسالة الحمراء (كشف أدوات المطور)
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const proxyNodes = ["NODE_LONDON_SECURE", "NODE_NEWYORK_PROXY", "NODE_SWISS_GATEWAY", "NODE_PARIS_EDGE"];
+            document.getElementById('proxyNode').innerText = "PROXY: " + proxyNodes[Math.floor(Math.random() * proxyNodes.length)];
+        });
+
+        function showAlert(msg, isSuccess = false) {
+            const alertBox = document.getElementById('systemAlert');
+            if(!alertBox) return;
+            alertBox.innerText = msg;
+            alertBox.className = `mb-4 p-3 rounded-xl border text-center text-xs font-bold transition-all duration-300 ${isSuccess ? 'bg-green-950/20 border-green-500/30 text-green-400' : 'bg-red-950/20 border-red-500/30 text-red-400'}`;
+            alertBox.classList.remove('hidden');
+        }
+
+        async function executeLogin(event) {
+            event.preventDefault();
+            const btn = document.getElementById('submitBtn');
+            
+            const honeypot = document.getElementById('security_honeypot_trap').value;
+            if (honeypot !== "") {
+                showAlert("Proxy Alert: Automated activity detected. Node locked.");
+                btn.disabled = true; 
+                return;
+            }
+
+            const now = Date.now();
+            if (now - lastSubmitTime < 3000) { 
+                showAlert("جدار الحماية: عمليات إدخال سريعة جداً! يرجى الانتظار لحماية خادم البيانات.");
+                return;
+            }
+            lastSubmitTime = now;
+
+            if (failedAttempts >= 4) {
+                showAlert("جدار الحماية الفائق: تم تجميد محاولات الدخول مؤقتاً لسلامة المحافظ.");
+                return;
+            }
+
+            const email = document.getElementById('loginEmail').value.replace(/['";\\<>]/g, "").trim();
+            const pass = document.getElementById('loginPass').value.trim();
+
+            btn.disabled = true; 
+            btn.innerHTML = '<span class="animate-pulse">التحقق من البصمة المشفرة...</span>';
+            document.getElementById('systemAlert').classList.add('hidden');
+
+            try {
+                const inputHash = await hashText(pass);
+
+                const { data: profile, error: fetchError } = await _supabase
+                    .from('users_profiles')
+                    .select('email, status, password_hash, telegram_user, balance, invite_code, referred_by, total_commissions, daily_streak')
+                    .eq('email', email)
+                    .maybeSingle();
+
+                if (fetchError) throw fetchError;
+                
+                if (!profile) throw new Error("INVALID_CREDENTIALS");
+                if (inputHash !== profile.password_hash) throw new Error("INVALID_CREDENTIALS");
+                if (profile.status !== 'active') throw new Error("ACCOUNT_SUSPENDED");
+
+                const sessionData = {
+                    email: profile.email,
+                    telegram_user: profile.telegram_user,
+                    status: profile.status,
+                    balance: profile.balance,
+                    invite_code: profile.invite_code,
+                    referred_by: profile.referred_by,
+                    total_commissions: profile.total_commissions,
+                    daily_streak: profile.daily_streak
+                };
+                localStorage.setItem('user_session_plain', JSON.stringify(sessionData));
+
+                showAlert("تمت المصادقة المشفرة بنجاح! جارٍ توجيهك إلى لوحة التحكم...", true);
+                btn.innerHTML = 'ACCESS GRANTED';
+                btn.style.background = 'linear-gradient(90deg, #10b981, #059669)';
+
+                setTimeout(() => { window.location.href = "dashboard.html"; }, 1500);
+
+            } catch (err) {
+                failedAttempts++;
+                let msg = "البريد الإلكتروني أو كلمة المرور غير صحيحة.";
+                
+                if (err.message === "ACCOUNT_SUSPENDED") {
+                    msg = "NODE_ACCESS_DENIED: حسابك موقوف مؤقتاً أو قيد المراجعة الإدارية.";
+                } else if (err.message === "INVALID_CREDENTIALS") {
+                    msg = "فشل المصادقة: البصمة المشفرة غير متطابقة.";
+                }
+
+                if (failedAttempts >= 4) {
+                    msg = "جدار الحماية: تم رصد محاولات تخمين متكررة. تجميد الواجهة مؤقتاً لحماية الأصول.";
+                    setTimeout(() => { failedAttempts = 0; }, 60000); 
+                }
+                
+                showAlert(msg);
+                
+                setTimeout(() => {
+                    btn.disabled = false; 
+                    btn.innerHTML = 'مصادقة الدخول الآمن';
+                }, failedAttempts * 1000); 
+            }
+        }
+    </script>
+</body>
+</html>

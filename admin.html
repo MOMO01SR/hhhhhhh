@@ -1,0 +1,1464 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" translate="no">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="google" content="notranslate" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://fonts.googleapis.com https://fonts.gstatic.com https://cdn.jsdelivr.net https://*.supabase.co" />
+    <meta name="theme-color" content="#020617" />
+    <title>POP Capital | ADMIN NODE</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com">
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
+    </script>
+    <style>
+        /* نفس الأنماط السابقة مع بعض التعديلات البسيطة */
+        :root {
+            --primary: #06b6d4;
+            --accent: #10b981;
+            --dark: #020617;
+            --danger: #ef4444;
+            --purple: #a855f7;
+            --warning: #f59e0b;
+            --surface: rgba(15, 23, 42, 0.85);
+        }
+        * {
+            user-select: none;
+            -webkit-user-select: none;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: var(--dark);
+            color: #e2e8f0;
+            margin: 0;
+            padding: 1rem;
+            min-height: 100vh;
+            background-image: radial-gradient(circle at 10% 15%, rgba(6, 182, 212, 0.07), transparent 40%),
+                radial-gradient(circle at 90% 85%, rgba(16, 185, 129, 0.05), transparent 40%);
+        }
+        .glass {
+            background: linear-gradient(145deg, rgba(15, 23, 42, 0.92), rgba(2, 6, 15, 0.96));
+            backdrop-filter: blur(28px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 1.5rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+        }
+        .glass-header {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 0.75rem;
+            margin-bottom: 1.25rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        .btn {
+            padding: 0.55rem 1.2rem;
+            border-radius: 0.65rem;
+            font-weight: 800;
+            border: none;
+            cursor: pointer;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.25s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            white-space: nowrap;
+        }
+        .btn-sm {
+            padding: 0.25rem 0.6rem;
+            font-size: 0.6rem;
+            gap: 0.2rem;
+        }
+        .btn-primary {
+            background: linear-gradient(90deg, #06b6d4, #2563eb);
+            color: #fff;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(6, 182, 212, 0.3);
+        }
+        .btn-success {
+            background: linear-gradient(90deg, #10b981, #059669);
+            color: #fff;
+        }
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+        }
+        .btn-danger {
+            background: #ef4444;
+            color: #fff;
+        }
+        .btn-danger:hover {
+            background: #dc2626;
+            transform: translateY(-2px);
+        }
+        .btn-warning {
+            background: #f59e0b;
+            color: #000;
+        }
+        .btn-warning:hover {
+            background: #d97706;
+            transform: translateY(-2px);
+        }
+        .btn-info {
+            background: #3b82f6;
+            color: #fff;
+        }
+        .btn-info:hover {
+            background: #2563eb;
+            transform: translateY(-2px);
+        }
+        .btn-purple {
+            background: linear-gradient(90deg, #a855f7, #7c3aed);
+            color: #fff;
+        }
+        .btn-purple:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(168, 85, 247, 0.3);
+        }
+        .input-field {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: #e2e8f0;
+            padding: 0.6rem 0.8rem;
+            border-radius: 0.6rem;
+            font-family: monospace;
+            width: 100%;
+            margin: 0.2rem 0;
+            font-size: 0.75rem;
+            transition: 0.2s;
+        }
+        .input-field:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.15);
+        }
+        .input-field::placeholder {
+            color: #475569;
+        }
+        .tab-btn {
+            padding: 0.5rem 1rem;
+            border-radius: 0.6rem;
+            font-weight: 800;
+            font-size: 0.7rem;
+            cursor: pointer;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            color: #94a3b8;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+        .tab-btn:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: #e2e8f0;
+        }
+        .tab-btn.active {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+            box-shadow: 0 4px 15px rgba(6, 182, 212, 0.25);
+        }
+        .badge {
+            padding: 0.2rem 0.6rem;
+            border-radius: 0.5rem;
+            font-size: 0.6rem;
+            font-weight: 800;
+            display: inline-block;
+        }
+        .badge-pending {
+            background: rgba(245, 158, 11, 0.18);
+            color: #f59e0b;
+            border: 1px solid rgba(245, 158, 11, 0.2);
+        }
+        .badge-approved {
+            background: rgba(16, 185, 129, 0.18);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+        .badge-rejected {
+            background: rgba(239, 68, 68, 0.18);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+        .badge-completed {
+            background: rgba(59, 130, 246, 0.18);
+            color: #3b82f6;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+        .badge-inactive {
+            background: rgba(100, 116, 139, 0.18);
+            color: #64748b;
+            border: 1px solid rgba(100, 116, 139, 0.2);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.7rem;
+        }
+        th,
+        td {
+            padding: 0.5rem 0.4rem;
+            text-align: right;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            vertical-align: middle;
+        }
+        th {
+            color: var(--primary);
+            font-weight: 900;
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: sticky;
+            top: 0;
+            background: rgba(2, 6, 23, 0.95);
+            z-index: 5;
+        }
+        .tabs-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            margin-bottom: 1.2rem;
+            padding: 0.3rem;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+        .tab-content {
+            display: none;
+            animation: fadeSlide 0.35s ease forwards;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        @keyframes fadeSlide {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.8rem;
+        }
+        .grid-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 0.8rem;
+        }
+        .search-box {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 0.8rem;
+            padding: 0.4rem 0.8rem;
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            align-items: center;
+        }
+        .search-box input {
+            background: transparent;
+            border: none;
+            color: #e2e8f0;
+            width: 100%;
+            outline: none;
+            font-family: monospace;
+            font-size: 0.75rem;
+        }
+        .search-box input::placeholder {
+            color: #475569;
+        }
+        .overflow-table {
+            overflow-x: auto;
+            max-height: 550px;
+            overflow-y: auto;
+            border-radius: 0.8rem;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+        }
+        .overflow-table::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+        .overflow-table::-webkit-scrollbar-thumb {
+            background: rgba(6, 182, 212, 0.3);
+            border-radius: 10px;
+        }
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            z-index: 10000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .modal-overlay.active {
+            display: flex;
+            opacity: 1;
+        }
+        .modal-box {
+            background: linear-gradient(145deg, #0f172a, #020617);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 1.5rem;
+            width: 100%;
+            max-width: 540px;
+            padding: 2rem;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            transform: scale(0.95) translateY(10px);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .modal-overlay.active .modal-box {
+            transform: scale(1) translateY(0);
+        }
+        .modal-close {
+            position: absolute;
+            top: 1rem;
+            left: 1rem;
+            background: none;
+            border: none;
+            color: #94a3b8;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .modal-close:hover {
+            color: #fff;
+            transform: rotate(90deg);
+        }
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: rgba(16, 185, 129, 0.95);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #fff;
+            padding: 0.8rem 1.5rem;
+            border-radius: 1rem;
+            font-weight: 800;
+            font-size: 0.85rem;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
+            z-index: 99999;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+        .toast.error {
+            background: rgba(239, 68, 68, 0.95);
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+        .toast.warning {
+            background: rgba(245, 158, 11, 0.95);
+            border-color: rgba(245, 158, 11, 0.3);
+            color: #000;
+        }
+        @media (max-width: 640px) {
+            .grid-2,
+            .grid-3 {
+                grid-template-columns: 1fr;
+            }
+            .glass {
+                padding: 1rem;
+            }
+            .tabs-container {
+                gap: 0.25rem;
+            }
+            .tab-btn {
+                font-size: 0.6rem;
+                padding: 0.35rem 0.6rem;
+            }
+            .btn {
+                font-size: 0.6rem;
+                padding: 0.35rem 0.7rem;
+            }
+            .modal-box {
+                padding: 1.5rem;
+            }
+        }
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(6, 182, 212, 0.25);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(6, 182, 212, 0.4);
+        }
+        /* تنسيق بطاقات الإعلانات */
+        .announce-card {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 1rem;
+            padding: 1rem;
+            margin-bottom: 0.8rem;
+        }
+        .announce-card .title {
+            font-weight: 800;
+            color: #fbbf24;
+        }
+        .announce-card .date {
+            color: #94a3b8;
+            font-size: 0.65rem;
+        }
+        .activity-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.6rem 0.8rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            font-size: 0.75rem;
+        }
+        .activity-item .type {
+            font-weight: 800;
+        }
+        .activity-item .type.deposit {
+            color: #10b981;
+        }
+        .activity-item .type.withdraw {
+            color: #ef4444;
+        }
+        .activity-item .type.investment {
+            color: #a855f7;
+        }
+        .activity-item .type.user {
+            color: #3b82f6;
+        }
+    </style>
+</head>
+<body class="max-w-7xl mx-auto">
+
+    <!-- Toast -->
+    <div id="toast" class="toast"><span id="toastMsg">✅ تم!</span></div>
+
+    <!-- ====== MODALS ====== -->
+    <!-- مودال تعديل المستخدم -->
+    <div id="userModal" class="modal-overlay">
+        <div class="modal-box">
+            <button class="modal-close" onclick="closeModal('userModal')">✕</button>
+            <h3 class="text-lg font-black text-cyan-400 mb-4">✏️ تعديل المستخدم</h3>
+            <div id="userEditForm"></div>
+        </div>
+    </div>
+
+    <!-- مودال تفاصيل الإيداع -->
+    <div id="depositModal" class="modal-overlay">
+        <div class="modal-box">
+            <button class="modal-close" onclick="closeModal('depositModal')">✕</button>
+            <h3 class="text-lg font-black text-cyan-400 mb-4">📥 تفاصيل الإيداع</h3>
+            <div id="depositDetailContent"></div>
+        </div>
+    </div>
+
+    <!-- مودال خطة -->
+    <div id="planModal" class="modal-overlay">
+        <div class="modal-box">
+            <button class="modal-close" onclick="closeModal('planModal')">✕</button>
+            <h3 class="text-lg font-black text-cyan-400 mb-4" id="planModalTitle">📊 خطة</h3>
+            <div id="planEditForm"></div>
+        </div>
+    </div>
+
+    <!-- مودال إعلان -->
+    <div id="announceModal" class="modal-overlay">
+        <div class="modal-box">
+            <button class="modal-close" onclick="closeModal('announceModal')">✕</button>
+            <h3 class="text-lg font-black text-cyan-400 mb-4" id="announceModalTitle">📢 إعلان</h3>
+            <div id="announceEditForm"></div>
+        </div>
+    </div>
+
+    <!-- ====== HEADER ====== -->
+    <header class="flex flex-wrap justify-between items-center gap-3 mb-5">
+        <div>
+            <h1 class="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-purple-200 to-purple-500 tracking-tight">🛡️ ADMIN NODE</h1>
+            <p class="text-[10px] text-gray-500 font-mono tracking-widest uppercase">Quantum Control Panel v4.0</p>
+        </div>
+        <div class="flex items-center gap-3 flex-wrap">
+            <button onclick="location.reload()" class="btn btn-primary">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                تحديث
+            </button>
+            <span class="text-[10px] text-emerald-400 font-mono flex items-center gap-1.5 bg-emerald-950/30 px-3 py-1.5 rounded-full border border-emerald-500/20">
+                <span class="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse"></span>
+                LIVE
+            </span>
+        </div>
+    </header>
+
+    <!-- ====== TABS (حسب الصورة) ====== -->
+    <div class="tabs-container">
+        <button class="tab-btn active" data-tab="settings">⚙️ الإعدادات</button>
+        <button class="tab-btn" data-tab="networks">🌐 الشبكات</button>
+        <button class="tab-btn" data-tab="announcements">📢 الإعلان</button>
+        <button class="tab-btn" data-tab="daily">🎁 المكافآت</button>
+        <button class="tab-btn" data-tab="activity">📊 النشاط</button>
+        <button class="tab-btn" data-tab="investments">📋 الاستثمار</button>
+        <button class="tab-btn" data-tab="withdrawals">💸 السحوبات</button>
+        <button class="tab-btn" data-tab="deposits">📥 الإبداعات</button>
+        <button class="tab-btn" data-tab="users">👥 مستخدمين</button>
+    </div>
+
+    <!-- ====== TAB CONTENT ====== -->
+    <div class="tab-content active" id="tab-settings"></div>
+    <div class="tab-content" id="tab-networks"></div>
+    <div class="tab-content" id="tab-announcements"></div>
+    <div class="tab-content" id="tab-daily"></div>
+    <div class="tab-content" id="tab-activity"></div>
+    <div class="tab-content" id="tab-investments"></div>
+    <div class="tab-content" id="tab-withdrawals"></div>
+    <div class="tab-content" id="tab-deposits"></div>
+    <div class="tab-content" id="tab-users"></div>
+
+    <script>
+        // ============================================================
+        //  SUPABASE CONFIG
+        // ============================================================
+        const SUPABASE_URL = 'https://aqoufnmdhopmdobknczg.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_BvmWY2L-ZfwkZloJ_uPaDw_9wTq84D-';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // ============================================================
+        //  GLOBAL STATE
+        // ============================================================
+        let allUsers = [];
+        let allDeposits = [];
+        let allWithdrawals = [];
+        let allInvestments = [];
+        let allPlans = [];
+        let allSettings = [];
+        let allAnnouncements = [];
+        let allActivityLog = []; // سنقوم بدمج البيانات من الجداول المختلفة
+
+        // ============================================================
+        //  HELPERS
+        // ============================================================
+        function formatDate(d) {
+            if (!d) return '-';
+            const dt = new Date(d);
+            return dt.toLocaleDateString('ar-EG') + ' ' + dt.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function formatUSD(n) {
+            return '$' + parseFloat(n || 0).toFixed(2);
+        }
+
+        function short(str, len = 12) {
+            if (!str) return '-';
+            return str.length > len ? str.slice(0, len) + '…' : str;
+        }
+
+        function getSetting(key, def = '') {
+            const s = allSettings.find(x => x.key === key);
+            return s ? s.value : def;
+        }
+
+        async function hashText(t) {
+            if (!t) return '';
+            const e = new TextEncoder();
+            const h = await crypto.subtle.digest('SHA-256', e.encode(t));
+            return Array.from(new Uint8Array(h)).map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        function showToast(msg, type = 'success') {
+            const el = document.getElementById('toast');
+            const msgEl = document.getElementById('toastMsg');
+            msgEl.textContent = msg;
+            el.className = 'toast';
+            if (type === 'error') el.classList.add('error');
+            else if (type === 'warning') el.classList.add('warning');
+            el.classList.add('show');
+            clearTimeout(el._timer);
+            el._timer = setTimeout(() => el.classList.remove('show'), 3000);
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+
+        function openModal(id) {
+            document.getElementById(id).classList.add('active');
+        }
+
+        // ============================================================
+        //  TAB SWITCHING
+        // ============================================================
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                const tab = this.dataset.tab;
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                document.getElementById('tab-' + tab).classList.add('active');
+                renderTab(tab);
+            });
+        });
+
+        function renderTab(tab) {
+            const el = document.getElementById('tab-' + tab);
+            switch (tab) {
+                case 'settings':
+                    renderSettings(el);
+                    break;
+                case 'networks':
+                    renderNetworks(el);
+                    break;
+                case 'announcements':
+                    renderAnnouncements(el);
+                    break;
+                case 'daily':
+                    renderDaily(el);
+                    break;
+                case 'activity':
+                    renderActivity(el);
+                    break;
+                case 'investments':
+                    renderInvestments(el);
+                    break;
+                case 'withdrawals':
+                    renderWithdrawals(el);
+                    break;
+                case 'deposits':
+                    renderDeposits(el);
+                    break;
+                case 'users':
+                    renderUsers(el);
+                    break;
+                default:
+                    el.innerHTML = '<div class="glass"><p class="text-gray-500">قيد التطوير</p></div>';
+            }
+        }
+
+        // ============================================================
+        //  LOAD ALL DATA
+        // ============================================================
+        async function loadAllData() {
+            try {
+                const [u, d, w, i, p, s, a] = await Promise.all([
+                    supabase.from('users_profiles').select('*').order('created_at', { ascending: false }),
+                    supabase.from('deposits').select('*').order('created_at', { ascending: false }),
+                    supabase.from('withdrawals').select('*').order('created_at', { ascending: false }),
+                    supabase.from('active_investments').select('*').order('created_at', { ascending: false }),
+                    supabase.from('investment_plans').select('*').order('id'),
+                    supabase.from('system_settings').select('*'),
+                    supabase.from('announcements').select('*').order('created_at', { ascending: false })
+                ]);
+                allUsers = u.data || [];
+                allDeposits = d.data || [];
+                allWithdrawals = w.data || [];
+                allInvestments = i.data || [];
+                allPlans = p.data || [];
+                allSettings = s.data || [];
+                allAnnouncements = a.data || [];
+
+                // بناء سجل النشاط من البيانات الموجودة
+                buildActivityLog();
+
+                // إعادة عرض التبويب النشط
+                const activeTab = document.querySelector('.tab-btn.active');
+                if (activeTab) renderTab(activeTab.dataset.tab);
+                else renderTab('settings');
+            } catch (err) {
+                console.error('Load error:', err);
+                showToast('فشل تحميل البيانات', 'error');
+            }
+        }
+
+        // ============================================================
+        //  BUILD ACTIVITY LOG (دمج البيانات)
+        // ============================================================
+        function buildActivityLog() {
+            const logs = [];
+
+            // إيداعات
+            allDeposits.forEach(d => {
+                logs.push({
+                    id: d.id,
+                    type: 'deposit',
+                    user: d.user_email,
+                    amount: d.amount,
+                    status: d.status,
+                    date: d.created_at,
+                    details: `إيداع ${d.crypto_currency || ''}`
+                });
+            });
+
+            // سحوبات
+            allWithdrawals.forEach(w => {
+                logs.push({
+                    id: w.id,
+                    type: 'withdraw',
+                    user: w.user_email,
+                    amount: w.amount,
+                    status: w.status,
+                    date: w.created_at,
+                    details: `سحب ${w.crypto_currency || ''}`
+                });
+            });
+
+            // استثمارات
+            allInvestments.forEach(inv => {
+                const plan = allPlans.find(p => p.id === inv.plan_id);
+                logs.push({
+                    id: inv.id,
+                    type: 'investment',
+                    user: inv.user_email,
+                    amount: inv.amount,
+                    status: inv.status,
+                    date: inv.created_at,
+                    details: `استثمار في ${plan?.name || 'خطة'}`
+                });
+            });
+
+            // ترتيب حسب التاريخ تنازلياً
+            logs.sort((a, b) => new Date(b.date) - new Date(a.date));
+            allActivityLog = logs;
+        }
+
+        // ============================================================
+        //  SAVE SETTING HELPER
+        // ============================================================
+        async function saveSetting(key, value) {
+            try {
+                await supabase.from('system_settings').upsert({ key, value }, { onConflict: 'key' });
+                const { data } = await supabase.from('system_settings').select('*');
+                allSettings = data || [];
+                showToast('تم حفظ الإعداد');
+            } catch (e) {
+                showToast('فشل الحفظ', 'error');
+            }
+        }
+
+        // ============================================================
+        //  TAB: SETTINGS (الإعدادات)
+        // ============================================================
+        function renderSettings(el) {
+            el.innerHTML = `
+                    <div class="glass">
+                        <div class="glass-header"><h3 class="text-lg font-black text-cyan-400">⚙️ الإعدادات العامة</h3></div>
+                        <div class="grid-2">
+                            <div><label class="text-xs text-gray-400">الحد الأدنى للسحب ($)</label><input id="g_min" class="input-field" type="number" step="any" value="${getSetting('min_withdraw', '5')}" /></div>
+                            <div><label class="text-xs text-gray-400">رسوم السحب (%)</label><input id="g_fee" class="input-field" type="number" step="0.1" value="${getSetting('withdraw_fee_percent', '2')}" /></div>
+                            <div><label class="text-xs text-gray-400">رابط التسجيل</label><input id="g_url" class="input-field" value="${getSetting('base_register_url', 'register.html')}" /></div>
+                        </div>
+                        <button class="btn btn-primary w-full mt-4" onclick="saveSettings()">💾 حفظ</button>
+                    </div>
+                `;
+        }
+
+        async function saveSettings() {
+            const min = document.getElementById('g_min').value;
+            const fee = document.getElementById('g_fee').value;
+            const url = document.getElementById('g_url').value;
+            await saveSetting('min_withdraw', min);
+            await saveSetting('withdraw_fee_percent', fee);
+            await saveSetting('base_register_url', url);
+            showToast('تم حفظ الإعدادات العامة');
+        }
+
+        // ============================================================
+        //  TAB: NETWORKS (الشبكات)
+        // ============================================================
+        function renderNetworks(el) {
+            const nets = [
+                { key: 'usdt_trc20_address', name: 'USDT TRC20', sk: 'network_trc20_status' },
+                { key: 'usdt_bep20_address', name: 'USDT BEP20', sk: 'network_bep20_status' },
+                { key: 'usdt_bnb_address', name: 'BNB (BSC)', sk: 'network_bnb_status' }
+            ];
+            // شبكات مخصصة
+            for (let i = 1; i <= 5; i++) {
+                const nameKey = `network_custom${i}_name`;
+                const addrKey = `network_custom${i}_address`;
+                const statKey = `network_custom${i}_status`;
+                const nameVal = getSetting(nameKey, '');
+                if (nameVal) {
+                    nets.push({ key: addrKey, name: nameVal, sk: statKey, customNameKey: nameKey });
+                }
+            }
+
+            let html = `
+                    <div class="glass">
+                        <div class="glass-header"><h3 class="text-lg font-black text-cyan-400">🌐 شبكات الإيداع</h3></div>
+                        <div class="space-y-3">
+                            ${nets.map(n => `
+                                <div class="bg-black/30 border border-white/5 rounded-xl p-3 flex flex-wrap items-center gap-2">
+                                    <span class="text-sm font-bold w-28 text-gray-300">${n.name}</span>
+                                    <input id="addr_${n.key}" class="input-field flex-1 min-w-[120px]" value="${getSetting(n.key, '')}" placeholder="عنوان المحفظة" />
+                                    <select id="stat_${n.sk}" class="input-field w-28">
+                                        <option value="active" ${getSetting(n.sk) === 'active' ? 'selected' : ''}>نشطة</option>
+                                        <option value="maintenance" ${getSetting(n.sk) === 'maintenance' ? 'selected' : ''}>صيانة</option>
+                                    </select>
+                                    <button class="btn btn-success btn-sm" onclick="saveNetwork('${n.key}','${n.sk}')">💾 حفظ</button>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <div class="mt-4 pt-4 border-t border-white/5 text-xs text-gray-400">
+                            لإضافة شبكة مخصصة، قم بإنشاء إعدادات: network_custom1_name, network_custom1_address, network_custom1_status ... إلخ
+                        </div>
+                    </div>
+                `;
+            el.innerHTML = html;
+        }
+
+        async function saveNetwork(addrKey, statKey) {
+            const addr = document.getElementById('addr_' + addrKey).value;
+            const stat = document.getElementById('stat_' + statKey).value;
+            await saveSetting(addrKey, addr);
+            await saveSetting(statKey, stat);
+            showToast('تم حفظ الشبكة');
+        }
+
+        // ============================================================
+        //  TAB: ANNOUNCEMENTS (الإعلان)
+        // ============================================================
+        function renderAnnouncements(el) {
+            let html = `
+                    <div class="glass">
+                        <div class="glass-header">
+                            <h3 class="text-lg font-black text-cyan-400">📢 الإعلانات</h3>
+                            <button class="btn btn-success" onclick="openAddAnnounceModal()">➕ إضافة إعلان</button>
+                        </div>
+                        <div id="announceList">
+                            ${allAnnouncements.length === 0 ? '<div class="text-center text-gray-500 py-6">لا توجد إعلانات</div>' : ''}
+                            ${allAnnouncements.map(a => `
+                                <div class="announce-card flex justify-between items-start gap-4">
+                                    <div>
+                                        <div class="title">${a.title || 'بدون عنوان'}</div>
+                                        <p class="text-sm text-gray-300">${a.content || ''}</p>
+                                        ${a.link ? `<a href="${a.link}" target="_blank" class="text-cyan-400 text-xs">رابط</a>` : ''}
+                                        <div class="date">${formatDate(a.created_at)} ${a.expiry_date ? '| ينتهي: '+formatDate(a.expiry_date) : ''}</div>
+                                    </div>
+                                    <div class="flex gap-1">
+                                        <button class="btn btn-warning btn-sm" onclick="editAnnounce(${a.id})">✏️</button>
+                                        <button class="btn btn-danger btn-sm" onclick="deleteAnnounce(${a.id})">🗑</button>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            el.innerHTML = html;
+        }
+
+        function openAddAnnounceModal() {
+            document.getElementById('announceModalTitle').textContent = '📢 إضافة إعلان جديد';
+            const form = document.getElementById('announceEditForm');
+            form.innerHTML = `
+                    <div class="space-y-3">
+                        <div><label class="text-xs text-gray-400">العنوان</label><input id="a_title" class="input-field" placeholder="عنوان الإعلان" /></div>
+                        <div><label class="text-xs text-gray-400">المحتوى</label><textarea id="a_content" class="input-field" rows="3" placeholder="نص الإعلان"></textarea></div>
+                        <div><label class="text-xs text-gray-400">رابط (اختياري)</label><input id="a_link" class="input-field" placeholder="https://..." /></div>
+                        <div><label class="text-xs text-gray-400">تاريخ الانتهاء (اختياري)</label><input id="a_expiry" class="input-field" type="datetime-local" /></div>
+                    </div>
+                    <button onclick="saveAnnounce()" class="btn btn-success w-full mt-4">💾 حفظ</button>
+                `;
+            openModal('announceModal');
+            document.getElementById('announceEditForm').dataset.mode = 'add';
+        }
+
+        function editAnnounce(id) {
+            const a = allAnnouncements.find(x => x.id === id);
+            if (!a) return;
+            document.getElementById('announceModalTitle').textContent = '✏️ تعديل الإعلان';
+            const form = document.getElementById('announceEditForm');
+            form.innerHTML = `
+                    <div class="space-y-3">
+                        <div><label class="text-xs text-gray-400">العنوان</label><input id="a_title" class="input-field" value="${a.title || ''}" /></div>
+                        <div><label class="text-xs text-gray-400">المحتوى</label><textarea id="a_content" class="input-field" rows="3">${a.content || ''}</textarea></div>
+                        <div><label class="text-xs text-gray-400">رابط</label><input id="a_link" class="input-field" value="${a.link || ''}" /></div>
+                        <div><label class="text-xs text-gray-400">تاريخ الانتهاء</label><input id="a_expiry" class="input-field" type="datetime-local" value="${a.expiry_date ? new Date(a.expiry_date).toISOString().slice(0,16) : ''}" /></div>
+                    </div>
+                    <button onclick="saveAnnounce(${a.id})" class="btn btn-success w-full mt-4">💾 تحديث</button>
+                `;
+            openModal('announceModal');
+            document.getElementById('announceEditForm').dataset.mode = 'edit';
+            document.getElementById('announceEditForm').dataset.id = id;
+        }
+
+        async function saveAnnounce(editId) {
+            const title = document.getElementById('a_title').value.trim();
+            const content = document.getElementById('a_content').value.trim();
+            const link = document.getElementById('a_link').value.trim();
+            const expiry = document.getElementById('a_expiry').value;
+
+            if (!title) { showToast('العنوان مطلوب', 'warning'); return; }
+
+            const data = { title, content, link: link || null, expiry_date: expiry || null };
+
+            try {
+                if (editId) {
+                    await supabase.from('announcements').update(data).eq('id', editId);
+                    showToast('تم تحديث الإعلان');
+                } else {
+                    await supabase.from('announcements').insert([data]);
+                    showToast('تم إضافة الإعلان');
+                }
+                closeModal('announceModal');
+                loadAllData();
+            } catch (e) {
+                showToast('فشل الحفظ', 'error');
+            }
+        }
+
+        async function deleteAnnounce(id) {
+            if (!confirm('حذف الإعلان؟')) return;
+            try {
+                await supabase.from('announcements').delete().eq('id', id);
+                showToast('تم حذف الإعلان');
+                loadAllData();
+            } catch (e) {
+                showToast('فشل الحذف', 'error');
+            }
+        }
+
+        // ============================================================
+        //  TAB: DAILY (المكافآت)
+        // ============================================================
+        function renderDaily(el) {
+            el.innerHTML = `
+                    <div class="glass">
+                        <div class="glass-header"><h3 class="text-lg font-black text-cyan-400">🎁 المكافآت اليومية</h3></div>
+                        <div class="grid-2">
+                            <div><label class="text-xs text-gray-400">المكافأة الأساسية ($)</label><input id="d_base" class="input-field" type="number" step="0.01" value="${getSetting('daily_base_reward', '0.08')}" /></div>
+                            <div><label class="text-xs text-gray-400">الزيادة اليومية ($)</label><input id="d_inc" class="input-field" type="number" step="0.01" value="${getSetting('daily_increment', '0.02')}" /></div>
+                            <div><label class="text-xs text-gray-400">عدد الأيام</label><input id="d_days" class="input-field" type="number" value="${getSetting('daily_total_days', '30')}" /></div>
+                        </div>
+                        <button class="btn btn-primary w-full mt-4" onclick="saveDaily()">💾 حفظ</button>
+                    </div>
+                `;
+        }
+
+        async function saveDaily() {
+            const base = document.getElementById('d_base').value;
+            const inc = document.getElementById('d_inc').value;
+            const days = document.getElementById('d_days').value;
+            await saveSetting('daily_base_reward', base);
+            await saveSetting('daily_increment', inc);
+            await saveSetting('daily_total_days', days);
+            showToast('تم حفظ إعدادات المكافآت');
+        }
+
+        // ============================================================
+        //  TAB: ACTIVITY (النشاط)
+        // ============================================================
+        function renderActivity(el) {
+            let html = `
+                    <div class="glass">
+                        <div class="glass-header"><h3 class="text-lg font-black text-cyan-400">📊 سجل النشاط</h3></div>
+                        <div class="search-box">
+                            <input id="activitySearch" placeholder="بحث بالبريد أو النوع..." oninput="filterActivity()" />
+                            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                        </div>
+                        <div class="overflow-table" id="activityList">
+                            ${allActivityLog.length === 0 ? '<div class="text-center text-gray-500 py-6">لا توجد أنشطة</div>' : ''}
+                            ${allActivityLog.map(log => {
+                                const typeClass = log.type === 'deposit' ? 'deposit' : log.type === 'withdraw' ? 'withdraw' : log.type === 'investment' ? 'investment' : 'user';
+                                const statusBadge = log.status === 'pending' ? 'badge-pending' :
+                                    log.status === 'approved' ? 'badge-approved' :
+                                    log.status === 'rejected' ? 'badge-rejected' :
+                                    log.status === 'completed' ? 'badge-completed' : 'badge-inactive';
+                                return `
+                                    <div class="activity-item">
+                                        <div>
+                                            <span class="type ${typeClass}">${log.type === 'deposit' ? '📥 إيداع' : log.type === 'withdraw' ? '💸 سحب' : log.type === 'investment' ? '📋 استثمار' : '👤 مستخدم'}</span>
+                                            <span class="text-gray-400 mx-2">${log.user}</span>
+                                            <span class="text-xs text-gray-500">${log.details || ''}</span>
+                                        </div>
+                                        <div class="flex items-center gap-3">
+                                            <span class="font-mono">${formatUSD(log.amount)}</span>
+                                            <span class="badge ${statusBadge}">${log.status || 'نشط'}</span>
+                                            <span class="text-[10px] text-gray-500">${formatDate(log.date)}</span>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                `;
+            el.innerHTML = html;
+        }
+
+        function filterActivity() {
+            const q = document.getElementById('activitySearch').value.toLowerCase();
+            const filtered = allActivityLog.filter(log =>
+                (log.user || '').toLowerCase().includes(q) ||
+                (log.type || '').toLowerCase().includes(q) ||
+                (log.details || '').toLowerCase().includes(q)
+            );
+            const container = document.getElementById('activityList');
+            if (filtered.length === 0) {
+                container.innerHTML = '<div class="text-center text-gray-500 py-6">لا توجد نتائج</div>';
+                return;
+            }
+            container.innerHTML = filtered.map(log => {
+                const typeClass = log.type === 'deposit' ? 'deposit' : log.type === 'withdraw' ? 'withdraw' : log.type === 'investment' ? 'investment' : 'user';
+                const statusBadge = log.status === 'pending' ? 'badge-pending' :
+                    log.status === 'approved' ? 'badge-approved' :
+                    log.status === 'rejected' ? 'badge-rejected' :
+                    log.status === 'completed' ? 'badge-completed' : 'badge-inactive';
+                return `
+                        <div class="activity-item">
+                            <div>
+                                <span class="type ${typeClass}">${log.type === 'deposit' ? '📥 إيداع' : log.type === 'withdraw' ? '💸 سحب' : log.type === 'investment' ? '📋 استثمار' : '👤 مستخدم'}</span>
+                                <span class="text-gray-400 mx-2">${log.user}</span>
+                                <span class="text-xs text-gray-500">${log.details || ''}</span>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <span class="font-mono">${formatUSD(log.amount)}</span>
+                                <span class="badge ${statusBadge}">${log.status || 'نشط'}</span>
+                                <span class="text-[10px] text-gray-500">${formatDate(log.date)}</span>
+                            </div>
+                        </div>
+                    `;
+            }).join('');
+        }
+
+        // ============================================================
+        //  TAB: INVESTMENTS (الاستثمار)
+        // ============================================================
+        function renderInvestments(el) {
+            let html = `
+                    <div class="glass">
+                        <div class="glass-header">
+                            <h3 class="text-lg font-black text-cyan-400">📋 الاستثمارات النشطة</h3>
+                            <span class="text-xs text-gray-400">${allInvestments.length} استثمار</span>
+                        </div>
+                        <div class="overflow-table">
+                            <table>
+                                <thead><tr><th>المستخدم</th><th>الخطة</th><th>المبلغ</th><th>ربح يومي</th><th>البداية</th><th>النهاية</th><th>الحالة</th><th>إجراءات</th></tr></thead>
+                                <tbody>
+                                    ${allInvestments.map(inv => {
+                                        const plan = allPlans.find(p => p.id === inv.plan_id);
+                                        const badge = inv.status === 'active' ? 'badge-approved' : 'badge-completed';
+                                        const txt = inv.status === 'active' ? 'نشط' : 'مكتمل';
+                                        return `<tr>
+                                            <td>${inv.user_email}</td>
+                                            <td>${plan?.name || inv.plan_id}</td>
+                                            <td class="font-mono text-emerald-400">${formatUSD(inv.amount)}</td>
+                                            <td class="font-mono text-purple-400">${formatUSD(inv.daily_profit)}</td>
+                                            <td>${formatDate(inv.start_date)}</td>
+                                            <td>${formatDate(inv.end_date)}</td>
+                                            <td><span class="badge ${badge}">${txt}</span></td>
+                                            <td>
+                                                <div class="flex flex-wrap gap-1">
+                                                    ${inv.status === 'active' ? `<button class="btn btn-info btn-sm" onclick="completeInvestment(${inv.id})">✅ إكمال</button>` : ''}
+                                                    <button class="btn btn-danger btn-sm" onclick="deleteInvestment(${inv.id})">🗑</button>
+                                                </div>
+                                            </td>
+                                        </tr>`;
+                                    }).join('')}
+                                    ${allInvestments.length === 0 ? '<tr><td colspan="8" class="text-center text-gray-500 py-6">لا توجد استثمارات</td></tr>' : ''}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            el.innerHTML = html;
+        }
+
+        async function completeInvestment(id) {
+            if (!confirm('تأكيد إكمال الاستثمار وإرجاع رأس المال؟')) return;
+            try {
+                const inv = allInvestments.find(x => x.id === id);
+                if (!inv) return;
+                const u = allUsers.find(x => x.email === inv.user_email);
+                if (u) {
+                    const newBal = parseFloat(u.balance || 0) + parseFloat(inv.amount);
+                    await supabase.from('users_profiles').update({ balance: newBal }).eq('email', u.email);
+                }
+                await supabase.from('active_investments').update({ status: 'completed' }).eq('id', id);
+                showToast('تم إكمال الاستثمار وإرجاع رأس المال');
+                loadAllData();
+            } catch (e) {
+                showToast('فشل الإكمال', 'error');
+            }
+        }
+
+        async function deleteInvestment(id) {
+            if (!confirm('حذف الاستثمار؟')) return;
+            try {
+                await supabase.from('active_investments').delete().eq('id', id);
+                showToast('تم حذف الاستثمار');
+                loadAllData();
+            } catch (e) {
+                showToast('فشل الحذف', 'error');
+            }
+        }
+
+        // ============================================================
+        //  TAB: WITHDRAWALS (السحوبات)
+        // ============================================================
+        function renderWithdrawals(el) {
+            let html = `
+                    <div class="glass">
+                        <div class="glass-header">
+                            <h3 class="text-lg font-black text-cyan-400">💸 طلبات السحب</h3>
+                            <span class="text-xs text-gray-400">${allWithdrawals.length} طلب</span>
+                        </div>
+                        <div class="overflow-table">
+                            <table>
+                                <thead><tr><th>المستخدم</th><th>الشبكة</th><th>المبلغ</th><th>العنوان</th><th>التاريخ</th><th>الحالة</th><th>إجراءات</th></tr></thead>
+                                <tbody>
+                                    ${allWithdrawals.map(w => {
+                                        const badge = w.status === 'pending' ? 'badge-pending' : w.status === 'approved' ? 'badge-approved' : 'badge-rejected';
+                                        const txt = w.status === 'pending' ? 'قيد المراجعة' : w.status === 'approved' ? 'مقبول' : 'مرفوض';
+                                        return `<tr>
+                                            <td>${w.user_email}</td>
+                                            <td class="font-mono text-xs">${w.crypto_currency || '-'}</td>
+                                            <td class="font-mono text-rose-400">${formatUSD(w.amount)}</td>
+                                            <td class="font-mono text-xs" dir="ltr">${short(w.wallet_address, 12)}</td>
+                                            <td>${formatDate(w.created_at)}</td>
+                                            <td><span class="badge ${badge}">${txt}</span></td>
+                                            <td>
+                                                <div class="flex flex-wrap gap-1">
+                                                    ${w.status === 'pending' ? `
+                                                        <button class="btn btn-success btn-sm" onclick="processWithdrawal(${w.id},'approved')">قبول</button>
+                                                        <button class="btn btn-danger btn-sm" onclick="processWithdrawal(${w.id},'rejected')">رفض</button>
+                                                    ` : ''}
+                                                    <button class="btn btn-danger btn-sm" onclick="deleteWithdrawal(${w.id})">🗑</button>
+                                                </div>
+                                            </td>
+                                        </tr>`;
+                                    }).join('')}
+                                    ${allWithdrawals.length === 0 ? '<tr><td colspan="7" class="text-center text-gray-500 py-6">لا توجد سحوبات</td></tr>' : ''}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            el.innerHTML = html;
+        }
+
+        async function processWithdrawal(id, status) {
+            try {
+                const w = allWithdrawals.find(x => x.id === id);
+                if (!w) return;
+                if (status === 'rejected' && w.status !== 'rejected') {
+                    const u = allUsers.find(x => x.email === w.user_email);
+                    if (u) {
+                        const newBal = parseFloat(u.balance || 0) + parseFloat(w.amount);
+                        await supabase.from('users_profiles').update({ balance: newBal }).eq('email', u.email);
+                    }
+                }
+                await supabase.from('withdrawals').update({ status }).eq('id', id);
+                showToast(`تم ${status === 'approved' ? 'قبول' : 'رفض'} السحب`);
+                loadAllData();
+            } catch (e) {
+                showToast('فشل المعالجة', 'error');
+            }
+        }
+
+        async function deleteWithdrawal(id) {
+            if (!confirm('حذف السحب؟')) return;
+            try {
+                await supabase.from('withdrawals').delete().eq('id', id);
+                showToast('تم حذف السحب');
+                loadAllData();
+            } catch (e) {
+                showToast('فشل الحذف', 'error');
+            }
+        }
+
+        // ============================================================
+        //  TAB: DEPOSITS (الإبداعات - الإيداعات)
+        // ============================================================
+        function renderDeposits(el) {
+            let html = `
+                    <div class="glass">
+                        <div class="glass-header">
+                            <h3 class="text-lg font-black text-cyan-400">📥 طلبات الإيداع</h3>
+                            <span class="text-xs text-gray-400">${allDeposits.length} طلب</span>
+                        </div>
+                        <div class="overflow-table">
+                            <table>
+                                <thead><tr><th>المستخدم</th><th>الشبكة</th><th>المبلغ</th><th>TxID</th><th>الصورة</th><th>التاريخ</th><th>الحالة</th><th>إجراءات</th></tr></thead>
+                                <tbody>
+                                    ${allDeposits.map(d => {
+                                        const badge = d.status === 'pending' ? 'badge-pending' : d.status === 'approved' ? 'badge-approved' : 'badge-rejected';
+                                        const txt = d.status === 'pending' ? 'قيد المراجعة' : d.status === 'approved' ? 'مقبول' : 'مرفوض';
+                                        return `<tr>
+                                            <td>${d.user_email}</td>
+                                            <td class="font-mono text-xs">${d.crypto_currency || '-'}</td>
+                                            <td class="font-mono text-emerald-400">${formatUSD(d.amount)}</td>
+                                            <td class="font-mono text-xs" dir="ltr">${short(d.tx_hash, 12)}</td>
+                                            <td>${d.image_url ? `<a href="${d.image_url}" target="_blank" class="text-cyan-400 text-xs">🖼️ عرض</a>` : '-'}</td>
+                                            <td>${formatDate(d.created_at)}</td>
+                                            <td><span class="badge ${badge}">${txt}</span></td>
+                                            <td>
+                                                <div class="flex flex-wrap gap-1">
+                                                    ${d.status === 'pending' ? `
+                                                        <button class="btn btn-success btn-sm" onclick="processDeposit(${d.id},'approved')">قبول</button>
+                                                        <button class="btn btn-danger btn-sm" onclick="processDeposit(${d.id},'rejected')">رفض</button>
+                                                    ` : ''}
+                                                    <button class="btn btn-info btn-sm" onclick="viewDepositDetail(${d.id})">🔍</button>
+                                                    <button class="btn btn-danger btn-sm" onclick="deleteDeposit(${d.id})">🗑</button>
+                                                </div>
+                                            </td>
+                                        </tr>`;
+                                    }).join('')}
+                                    ${allDeposits.length === 0 ? '<tr><td colspan="8" class="text-center text-gray-500 py-6">لا توجد إيداعات</td></tr>' : ''}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            el.innerHTML = html;
+        }
+
+        async function processDeposit(id, status) {
+            try {
+                const d = allDeposits.find(x => x.id === id);
+                if (!d) return;
+                if (status === 'approved' && d.status !== 'approved') {
+                    const u = allUsers.find(x => x.email === d.user_email);
+                    if (u) {
+                        const newBal = parseFloat(u.balance || 0) + parseFloat(d.amount);
+                        await supabase.from('users_profiles').update({ balance: newBal }).eq('email', u.email);
+                    }
+                }
+                if (status === 'rejected' && d.status === 'approved') {
+                    const u = allUsers.find(x => x.email === d.user_email);
+                    if (u) {
+                        const newBal = Math.max(0, parseFloat(u.balance || 0) - parseFloat(d.amount));
+                        await supabase.from('users_profiles').update({ balance: newBal }).eq('email', u.email);
+                    }
+                }
+                await supabase.from('deposits').update({ status }).eq('id', id);
+                showToast(`تم ${status === 'approved' ? 'قبول' : 'رفض'} الإيداع`);
+                loadAllData();
+            } catch (e) {
+                showToast('فشل المعالجة', 'error');
+            }
+        }
+
+        async function deleteDeposit(id) {
+            if (!confirm('حذف الإيداع؟')) return;
+            try {
+                await supabase.from('deposits').delete().eq('id', id);
+                showToast('تم حذف الإيداع');
+                loadAllData();
+            } catch (e) {
+                showToast('فشل الحذف', 'error');
+            }
+        }
+
+        function viewDepositDetail(id) {
+            const d = allDeposits.find(x => x.id === id);
+            if (!d) return;
+            const content = document.getElementById('depositDetailContent');
+            content.innerHTML = `
+                    <div class="space-y-3 text-sm">
+                        <div class="flex justify-between"><span class="text-gray-400">المستخدم</span><span class="font-bold">${d.user_email}</span></div>
+                        <div class="flex justify-between"><span class="text-gray-400">المبلغ</span><span class="font-bold text-emerald-400">${formatUSD(d.amount)}</span></div>
+                        <div class="flex justify-between"><span class="text-gray-400">الشبكة</span><span class="font-mono">${d.crypto_currency || '-'}</span></div>
+                        <div class="flex justify-between"><span class="text-gray-400">TxID</span><span class="font-mono text-xs" dir="ltr" style="word-break:break-all;">${d.tx_hash || '-'}</span></div>
+                        <div class="flex justify-between"><span class="text-gray-400">الحالة</span><span class="badge ${d.status === 'pending' ? 'badge-pending' : d.status === 'approved' ? 'badge-approved' : 'badge-rejected'}">${d.status}</span></div>
+                        <div class="flex justify-between"><span class="text-gray-400">التاريخ</span><span>${formatDate(d.created_at)}</span></div>
+                        ${d.image_url ? `<div><span class="text-gray-400">الصورة</span><br><img src="${d.image_url}" class="mt-2 rounded-xl max-h-60 w-auto mx-auto border border-white/10" /></div>` : ''}
+                    </div>
+                `;
+            openModal('depositModal');
+        }
+
+        // ============================================================
+        //  TAB: USERS (مستخدمين)
+        // ============================================================
+        function renderUsers(el) {
+            let html = `
+                    <div class="glass">
+                        <div class="glass-header">
+                            <h3 class="text-lg font-black text-cyan-400">👥 المستخدمين</h3>
+                            <span class="text-xs text-gray-400">${allUsers.length} مستخدم</span>
+                        </div>
+                        <div class="search-box">
+                            <input id="userSearch" placeholder="بحث بالبريد..." oninput="filterUsers()" />
+                            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                        </div>
+                        <div class="overflow-table">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>البريد</th>
+                                        <th>تيليجرام</th>
+                                        <th>التسجيل</th>
+                                        <th>الرصيد</th>
+                                        <th>إيداع</th>
+                                        <th>مسحوب</th>
+                                        <th>أرباح</th>
+                                        <th>السحب</th>
+                                        <th>الحالة</th>
+                                        <th>إجراءات</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="usersBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            el.innerHTML = html;
+            renderUsersTable(allUsers);
+        }
+
+        function renderUsersTable(users) {
+            const tbody = document.getElementById('usersBody');
+            if (!tbody) return;
+            if (users.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="10" class="text-center text-gray-500 py-6">لا يوجد مستخدمين</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = users.map(u => `
+                    <tr>
+                        <td class="font-mono text-xs">${u.email || '-'}</td>
+                        <td>${u.telegram_user || '-'}</td>
+                        <td>${formatDate(u.created_at)}</td>
+                        <td class="font-mono text-emerald-400">${formatUSD(u.balance)}</td>
+                        <td class="font-mono text-blue-400">${formatUSD(u.total_invested)}</td>
+                        <td class="font-mono text-rose-400">${formatUSD(u.total_withdrawn)}</td>
+                        <td class="font-mono text-purple-400">${formatUSD(u.profit_earned)}</td>
+                        <td><span class="badge ${u.can_withdraw !== false ? 'badge-approved' : 'badge-rejected'}">${u.can_withdraw !== false ? 'مسموح' : 'ممنوع'}</span></td>
+                        <td><span class="badge ${u.status === 'active' ? 'badge-approved' : 'badge-rejected'}">${u.status === 'active' ? 'نشط' : 'موقوف'}</span></td>
+                        <td>
+                            <div class="flex flex-wrap gap-1">
+                                <button class="btn btn-warning btn-sm" onclick="openUserModal('${u.email}')">✏️</button>
+                                <button class="btn btn-danger btn-sm" onclick="deleteUser('${u.email}')">🗑</button>
+                                <button class="btn btn-info btn-sm" onclick="toggleWithdraw('${u.email}',${u.can_withdraw !== false})">${u.can_withdraw !== false ? '🚫' : '✅'}</button>
+                            </div>
+                        </td>
+                    </tr>
+                `).join('');
+        }
+
+        function filterUsers() {
+            const q = document.getElementById('userSearch').value.toLowerCase();
+            const filtered = allUsers.filter(u => (u.email || '').toLowerCase().includes(q));
+            renderUsersTable(filtered);
+        }
+
+        // --- User Modal ---
+        function openUserModal(email) {
+            const u = allUsers.find(x => x.email === email);
+            if (!u) return;
+            const form = document.getElementById('userEditForm');
+            form.innerHTML = `
+                    <div class="grid-2">
+                        <div><label class="text-xs text-gray-400">الرصيد</label><input type="number" id="ubal" class="input-field" value="${u.balance || 0}" step="any" /></div>
+                        <div><label class="text-xs text-gray-400">الحالة</label>
+                            <select id="ustat" class="input-field">
+                                <option value="active" ${u.status === 'active' ? 'selected' : ''}>نشط</option>
+                                <option value="suspended" ${u.status === 'suspended' ? 'selected' : ''}>موقوف</option>
+                            </select>
+                        </div>
+                        <div><label class="text-xs text-gray-400">السحب</label>
+                            <select id="ucan" class="input-field">
+                                <option value="1" ${u.can_withdraw !== false ? 'selected' : ''}>مسموح</option>
+                                <option value="0" ${u.can_withdraw === false ? 'selected' : ''}>محظور</option>
+                            </select>
+                        </div>
+                        <div><label class="text-xs text-gray-400">كود الإحالة</label><input type="text" id="uinv" class="input-field" value="${u.invite_code || ''}" /></div>
+                        <div><label class="text-xs text-gray-400">تيليجرام</label><input type="text" id="utel" class="input-field" value="${u.telegram_user || ''}" /></div>
+                        <div><label class="text-xs text-gray-400">أيام النشاط</label><input type="number" id="ustreak" class="input-field" value="${u.daily_streak || 0}" /></div>
+                        <div><label class="text-xs text-gray-400">كلمة مرور جديدة</label><input type="text" id="upass" class="input-field" placeholder="اترك فارغاً" /></div>
+                        <div><label class="text-xs text-gray-400">PIN جديد</label><input type="text" id="upin" class="input-field" placeholder="اترك فارغاً" /></div>
+                    </div>
+                    <button onclick="saveUser('${u.email}')" class="btn btn-success w-full mt-4">💾 حفظ التغييرات</button>
+                `;
+            openModal('userModal');
+        }
+
+        async function saveUser(email) {
+            try {
+                const data = {
+                    balance: parseFloat(document.getElementById('ubal').value) || 0,
+                    status: document.getElementById('ustat').value,
+                    can_withdraw: document.getElementById('ucan').value === '1',
+                    invite_code: document.getElementById('uinv').value.trim(),
+                    telegram_user: document.getElementById('utel').value.trim(),
+                    daily_streak: parseInt(document.getElementById('ustreak').value) || 0
+                };
+                const pass = document.getElementById('upass').value.trim();
+                const pin = document.getElementById('upin').value.trim();
+                if (pass) data.password_hash = await hashText(pass);
+                if (pin) data.withdrawal_pin_hash = await hashText(pin);
+
+                await supabase.from('users_profiles').update(data).eq('email', email);
+                closeModal('userModal');
+                showToast('تم تحديث المستخدم');
+                loadAllData();
+            } catch (e) {
+                showToast('فشل التحديث', 'error');
+            }
+        }
+
+        async function deleteUser(email) {
+            if (!confirm(`حذف المستخدم ${email}؟`)) return;
+            try {
+                await supabase.from('users_profiles').delete().eq('email', email);
+                showToast('تم حذف المستخدم');
+                loadAllData();
+            } catch (e) {
+                showToast('فشل الحذف', 'error');
+            }
+        }
+
+        async function toggleWithdraw(email, current) {
+            try {
+                await supabase.from('users_profiles').update({ can_withdraw: !current }).eq('email', email);
+                showToast('تم تبديل حالة السحب');
+                loadAllData();
+            } catch (e) {
+                showToast('فشل التبديل', 'error');
+            }
+        }
+
+        // ============================================================
+        //  INIT
+        // ============================================================
+        loadAllData();
+
+        // ============================================================
+        //  SECURITY
+        // ============================================================
+        document.addEventListener('contextmenu', e => e.preventDefault());
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'F12' ||
+                (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) ||
+                (e.ctrlKey && (e.key === 'u' || e.key === 's'))) {
+                e.preventDefault();
+            }
+        });
+        setInterval(() => console.clear(), 1000);
+        console.log('%c⚠️ ADMIN NODE SECURE v4.0', 'color:red;font-size:16px;font-weight:bold;');
+    </script>
+</body>
+</html>

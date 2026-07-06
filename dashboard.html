@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام الظل للتداول الاحترافي - الإصدار المتوافق مع الهواتف</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap');
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: #07090b;
+            color: #d1d5db;
+        }
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: #0f1115; }
+        ::-webkit-scrollbar-thumb { background: #374151; border-radius: 2px; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between select-none">
+
+    <header class="bg-[#0f1115] border-b border-[#1f2937] px-4 py-3 flex flex-wrap justify-between items-center gap-3 shadow-md">
+        <div class="flex items-center gap-2">
+            <div class="w-8 h-8 bg-gradient-to-br from-[#f59e0b] to-[#b45309] rounded flex items-center justify-center font-black text-[#07090b] text-base shadow-lg">X</div>
+            <h1 class="text-lg font-black tracking-wider text-white">نظام <span class="text-[#f59e0b]">الظل</span> للتداول</h1>
+        </div>
+        
+        <div class="flex items-center flex-wrap gap-2 text-xs font-semibold">
+            <div class="bg-[#171a21] px-3 py-1.5 rounded border border-[#2d3748]">
+                <span class="text-gray-500">الزوج:</span>
+                <select id="symbolSelect" class="bg-transparent text-[#f59e0b] focus:outline-none cursor-pointer">
+                    <option value="BTCUSDT">BTC / USDT</option>
+                    <option value="ETHUSDT">ETH / USDT</option>
+                    <option value="SOLUSDT">SOL / USDT</option>
+                </select>
+            </div>
+            <div class="bg-[#171a21] px-3 py-1.5 rounded border border-[#2d3748]">
+                <span class="text-gray-500">الفريم:</span>
+                <select id="intervalSelect" class="bg-transparent text-[#f59e0b] focus:outline-none cursor-pointer">
+                    <option value="1m">1 دقيقة</option>
+                    <option value="5m">5 دقائق</option>
+                    <option value="15m" selected>15 دقيقة</option>
+                    <option value="1h">1 ساعة</option>
+                </select>
+            </div>
+            <div class="bg-[#07090b] px-3 py-1.5 rounded border border-[#1f2937] flex items-center gap-2">
+                <span id="connectionDot" class="w-2 h-2 rounded-full bg-yellow-500 animate-pulse"></span>
+                <span class="text-gray-500">السعر:</span>
+                <span id="livePrice" class="font-mono text-[#10b981] text-base font-bold">جاري الاتصال...</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 p-3 grid grid-cols-1 lg:grid-cols-4 gap-3">
+        
+        <section class="lg:col-span-1 flex flex-col gap-3">
+            
+            <div class="bg-[#0f1115] p-4 rounded border border-[#1f2937]">
+                <h2 class="text-xs font-bold mb-3 flex justify-between text-gray-400">
+                    <span>مخزون المحفظة</span>
+                    <button id="resetBalance" class="text-[11px] text-red-500 hover:text-red-400">تصفير (100$)</button>
+                </h2>
+                <div class="space-y-2">
+                    <div class="flex justify-between items-center bg-[#171a21] p-2.5 rounded">
+                        <span class="text-xs text-gray-500">الرصيد المتاح:</span>
+                        <span id="walletBalance" class="font-mono text-lg font-black text-white">100.00 $</span>
+                    </div>
+                    <div class="flex justify-between items-center bg-[#171a21] p-2.5 rounded">
+                        <span class="text-xs text-gray-500">العائد الإجمالي:</span>
+                        <span id="totalPnL" class="font-mono text-xs font-bold text-gray-400">0.00%</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-[#0f1115] p-4 rounded border border-[#1f2937] flex-1 flex flex-col justify-between gap-3">
+                <div>
+                    <h2 class="text-xs font-bold text-gray-400 mb-3">إعدادات إدارة المخاطر</h2>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="flex justify-between text-[11px] text-gray-500 mb-1">
+                                <span>حجم المخاطرة:</span>
+                                <span id="riskPercentVal" class="text-[#f59e0b] font-bold">2%</span>
+                            </label>
+                            <input type="range" id="riskPercent" min="1" max="100" value="2" class="w-full accent-[#f59e0b] h-1 bg-[#2d3748] rounded">
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-[10px] text-gray-500 mb-1">الهدف (TP %)</label>
+                                <input type="number" id="tpPercent" value="2.0" step="0.1" class="w-full bg-[#171a21] border border-[#2d3748] rounded p-1.5 text-xs font-mono text-white text-center">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] text-gray-500 mb-1">الوقف (SL %)</label>
+                                <input type="number" id="slPercent" value="1.0" step="0.1" class="w-full bg-[#171a21] border border-[#2d3748] rounded p-1.5 text-xs font-mono text-white text-center">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2 pt-3 border-t border-[#1f2937]">
+                    <button id="buyBtn" class="bg-[#065f46] hover:bg-[#10b981] text-white font-bold py-2.5 rounded shadow text-sm transition-all">
+                        شراء LONG
+                    </button>
+                    <button id="sellBtn" class="bg-[#991b1b] hover:bg-[#ef4444] text-white font-bold py-2.5 rounded shadow text-sm transition-all">
+                        بيع SHORT
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <section class="lg:col-span-3 flex flex-col gap-3">
+            
+            <div class="bg-[#0f1115] p-2 rounded border border-[#1f2937] flex flex-col flex-1 min-h-[380px] relative">
+                <div class="flex justify-between items-center mb-1 px-2 text-[11px] text-gray-400">
+                    <span id="networkMode" class="text-yellow-500 font-mono">📡 اتصال حي عبر WebSocket...</span>
+                    <div id="alertBox" class="hidden bg-[#f59e0b]/20 border border-[#f59e0b] text-[#f59e0b] px-2 py-0.5 rounded font-bold animate-pulse">
+                        🎯 تم اكتشاف فرصة دخول!
+                    </div>
+                </div>
+                
+                <div id="chartContainer" class="w-full flex-1 rounded bg-[#07090b] min-h-[340px]"></div>
+            </div>
+
+            <div class="bg-[#0f1115] rounded border border-[#1f2937] overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-right text-[11px] text-gray-300">
+                        <thead class="bg-[#171a21] text-gray-500 uppercase border-b border-[#1f2937]">
+                            <tr>
+                                <th class="p-2.5">النوع</th>
+                                <th class="p-2.5">سعر الدخول</th>
+                                <th class="p-2.5">الهدف (TP)</th>
+                                <th class="p-2.5">الوقف (SL)</th>
+                                <th class="p-2.5">الربح / الخسارة</th>
+                                <th class="p-2.5 text-center">إجراء</th>
+                            </tr>
+                        </thead>
+                        <tbody id="positionsTableBody" class="divide-y divide-[#1f2937]">
+                            <tr id="emptyRow"><td colspan="6" class="p-4 text-center text-gray-600">لا توجد صفقات مفتوحة.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        let balance = 100.00;
+        let activePosition = null;
+        let chart, candlestickSeries, smaSeries;
+        let currentSymbol = 'BTCUSDT';
+        let currentInterval = '15m';
+        let markersList = [];
+        let klineData = [];
+        let ws = null;
+        let isSimulated = false;
+        let simInterval = null;
+
+        window.addEventListener('DOMContentLoaded', () => {
+            initChart();
+            startDataStream();
+            
+            document.getElementById('symbolSelect').addEventListener('change', (e) => { currentSymbol = e.target.value; switchMarket(); });
+            document.getElementById('intervalSelect').addEventListener('change', (e) => { currentInterval = e.target.value; switchMarket(); });
+            document.getElementById('riskPercent').addEventListener('input', (e) => { document.getElementById('riskPercentVal').innerText = e.target.value + '%'; });
+
+            document.getElementById('buyBtn').addEventListener('click', () => openTrade('LONG'));
+            document.getElementById('sellBtn').addEventListener('click', () => openTrade('SHORT'));
+            document.getElementById('resetBalance').addEventListener('click', () => {
+                balance = 100.00; activePosition = null; markersList = [];
+                if (candlestickSeries) candlestickSeries.setMarkers([]);
+                updateUI();
+            });
+        });
+
+        function initChart() {
+            const container = document.getElementById('chartContainer');
+            chart = LightweightCharts.createChart(container, {
+                width: container.clientWidth || window.innerWidth - 30,
+                height: container.clientHeight || 350,
+                layout: { background: { color: 'transparent' }, textColor: '#6b7280', fontSize: 11, fontFamily: 'Cairo' },
+                grid: { vertLines: { color: '#171a21' }, horzLines: { color: '#171a21' } },
+                crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+                rightPriceScale: { borderColor: '#1f2937' },
+                timeScale: { borderColor: '#1f2937', timeVisible: true }
+            });
+
+            candlestickSeries = chart.addCandlestickSeries({
+                upColor: '#10b981', downColor: '#ef4444', borderUpColor: '#10b981', borderDownColor: '#ef4444', wickUpColor: '#10b981', wickDownColor: '#ef4444',
+            });
+
+            smaSeries = chart.addLineSeries({ color: '#f59e0b', lineWidth: 1.5 });
+
+            new ResizeObserver(entries => {
+                if (entries.length === 0 || entries[0].target !== container) return;
+                const newRect = entries[0].contentRect;
+                chart.applyOptions({ width: newRect.width, height: newRect.height });
+            }).observe(container);
+        }
+
+        function switchMarket() {
+            if (ws) ws.close();
+            if (simInterval) clearInterval(simInterval);
+            markersList = [];
+            candlestickSeries.setMarkers([]);
+            startDataStream();
+        }
+
+        // جلب البيانات مع نظام حماية ذكي للهواتف المتنقلة (WebSocket + Fallback)
+        async function startDataStream() {
+            const dot = document.getElementById('connectionDot');
+            const statusEl = document.getElementById('networkMode');
+            dot.className = "w-2 h-2 rounded-full bg-yellow-500 animate-pulse";
+            statusEl.innerText = "⏳ جلب البيانات من بينانس...";
+
+            // 1. محاولة جلب الشموع عبر واجهة بيانات بينانس العالمية (الأكثر توافقاً مع متصفحات الموبايل)
+            const endpoints = [
+                `https://data-api.binance.vision/api/v3/klines?symbol=${currentSymbol}&interval=${currentInterval}&limit=80`,
+                `https://api.binance.com/api/v3/klines?symbol=${currentSymbol}&interval=${currentInterval}&limit=80`
+            ];
+
+            let loaded = false;
+            for (let url of endpoints) {
+                try {
+                    const response = await fetch(url);
+                    if (response.ok) {
+                        const data = await response.json();
+                        formatAndRenderKlines(data);
+                        loaded = true;
+                        break;
+                    }
+                } catch (e) { console.log("حجب المتصفح للرابط، جاري تجربة رابط بديل..."); }
+            }
+
+            // إذا نجح الاتصال، نقوم بتشغيل WebSocket اللحظي (سريع جداً وخالي من الحجب)
+            if (loaded) {
+                isSimulated = false;
+                connectWebSocket();
+            } else {
+                // إذا كان الملف مفتوحاً داخل مستعرض ملفات الموبايل (Local Content URL) يمنع الإنترنت تماماً
+                // نشغل فوراً "محرك بيانات محاكاة الظل" لكي يعمل الشارت وتحلل الصفقات 100% بدون أي توقف!
+                startSimulatedEngine();
+            }
+        }
+
+        function formatAndRenderKlines(data) {
+            klineData = data.map(d => ({
+                time: d[0] / 1000,
+                open: parseFloat(d[1]),
+                high: parseFloat(d[2]),
+                low: parseFloat(d[3]),
+                close: parseFloat(d[4])
+            }));
+
+            candlestickSeries.setData(klineData);
+            updateSMA();
+            
+            const latestPrice = klineData[klineData.length - 1].close;
+            updateLivePrice(latestPrice);
+        }
+
+        function updateSMA() {
+            const period = 20;
+            const sma = [];
+            for (let i = period - 1; i < klineData.length; i++) {
+                let sum = 0;
+                for (let j = 0; j < period; j++) sum += klineData[i - j].close;
+                sma.push({ time: klineData[i].time, value: sum / period });
+            }
+            smaSeries.setData(sma);
+        }
+
+        // اتصال WebSocket سريع جداً للأسعار اللحظية
+        function connectWebSocket() {
+            const streamName = `${currentSymbol.toLowerCase()}@kline_${currentInterval}`;
+            ws = new WebSocket(`wss://stream.binance.com:9443/ws/${streamName}`);
+
+            ws.onopen = () => {
+                document.getElementById('connectionDot').className = "w-2 h-2 rounded-full bg-green-500";
+                document.getElementById('networkMode').innerText = "🟢 متصل بالسوق اللحظي المباشر (Binance WS)";
+            };
+
+            ws.onmessage = (event) => {
+                const message = JSON.parse(event.data);
+                const k = message.k;
+                
+                const liveCandle = {
+                    time: k.t / 1000,
+                    open: parseFloat(k.o),
+                    high: parseFloat(k.h),
+                    low: parseFloat(k.l),
+                    close: parseFloat(k.c)
+                };
+
+                candlestickSeries.update(liveCandle);
+                updateLivePrice(liveCandle.close);
+                checkActivePosition(liveCandle.close);
+
+                // تحديث الشمعة الأخيرة في المصفوفة للتحليل
+                if (klineData.length > 0 && klineData[klineData.length - 1].time === liveCandle.time) {
+                    klineData[klineData.length - 1] = liveCandle;
+                } else {
+                    klineData.push(liveCandle);
+                }
+                analyzeSignal();
+            };
+
+            ws.onerror = () => {
+                if (!isSimulated) startSimulatedEngine();
+            };
+        }
+
+        // محرك المحاكاة اللحظي (في حال منع أمان متصفح الهاتف الاتصال الخارجي)
+        function startSimulatedEngine() {
+            isSimulated = true;
+            document.getElementById('connectionDot').className = "w-2 h-2 rounded-full bg-[#f59e0b]";
+            document.getElementById('networkMode').innerText = "⚡ وضع محاكاة السوق الفوري (الحماية المحلية)";
+
+            // إنشاء 60 شمعة واقعية بناء على أسعار تقريبية للبيتكوين والإيثريوم
+            let basePrice = currentSymbol === 'BTCUSDT' ? 64500 : (currentSymbol === 'ETHUSDT' ? 3450 : 145);
+            let currentTime = Math.floor(Date.now() / 1000) - (60 * 900);
+            klineData = [];
+
+            for (let i = 0; i < 60; i++) {
+                let change = (Math.random() - 0.48) * (basePrice * 0.008);
+                let open = basePrice;
+                let close = open + change;
+                let high = Math.max(open, close) + Math.random() * (basePrice * 0.003);
+                let low = Math.min(open, close) - Math.random() * (basePrice * 0.003);
+                
+                klineData.push({ time: currentTime, open, high, low, close });
+                basePrice = close;
+                currentTime += 900;
+            }
+
+            candlestickSeries.setData(klineData);
+            updateSMA();
+            updateLivePrice(basePrice);
+
+            // تشغيل النبض اللحظي
+            if (simInterval) clearInterval(simInterval);
+            simInterval = setInterval(() => {
+                let lastCandle = klineData[klineData.length - 1];
+                let movement = (Math.random() - 0.49) * (lastCandle.close * 0.003);
+                let newClose = lastCandle.close + movement;
+                
+                let updatedCandle = {
+                    time: lastCandle.time,
+                    open: lastCandle.open,
+                    high: Math.max(lastCandle.high, newClose),
+                    low: Math.min(lastCandle.low, newClose),
+                    close: newClose
+                };
+
+                klineData[klineData.length - 1] = updatedCandle;
+                candlestickSeries.update(updatedCandle);
+                updateLivePrice(newClose);
+                checkActivePosition(newClose);
+                analyzeSignal();
+            }, 800);
+        }
+
+        function updateLivePrice(price) {
+            const el = document.getElementById('livePrice');
+            const prev = parseFloat(el.innerText) || price;
+            el.innerText = price.toFixed(2) + " $";
+            el.className = price >= prev ? "font-mono text-[#10b981] text-base font-bold" : "font-mono text-[#ef4444] text-base font-bold";
+        }
+
+        function analyzeSignal() {
+            if (klineData.length < 3) return;
+            const prev = klineData[klineData.length - 2];
+            const curr = klineData[klineData.length - 1];
+
+            // تنبيه عند حركة قوية
+            if (Math.abs(curr.close - prev.close) / prev.close > 0.003) {
+                const box = document.getElementById('alertBox');
+                box.classList.remove('hidden');
+                setTimeout(() => box.classList.add('hidden'), 4000);
+            }
+        }
+
+        function openTrade(type) {
+            if (activePosition) return;
+            const currentPrice = parseFloat(document.getElementById('livePrice').innerText);
+            if (!currentPrice || currentPrice === 0) return;
+
+            const tpInputPercent = parseFloat(document.getElementById('tpPercent').value);
+            const slInputPercent = parseFloat(document.getElementById('slPercent').value);
+
+            let takeProfitPrice = type === 'LONG' ? currentPrice * (1 + (tpInputPercent / 100)) : currentPrice * (1 - (tpInputPercent / 100));
+            let stopLossPrice = type === 'LONG' ? currentPrice * (1 - (slInputPercent / 100)) : currentPrice * (1 + (slInputPercent / 100));
+
+            activePosition = {
+                type: type, symbol: currentSymbol, entryPrice: currentPrice, size: balance,
+                takeProfitPrice: takeProfitPrice, stopLossPrice: stopLossPrice
+            };
+
+            addChartMarker(currTime(), type === 'LONG' ? 'belowBar' : 'aboveBar', '#f59e0b', 'circle', 'دخول ' + type);
+            updateUI();
+        }
+
+        function currTime() {
+            return klineData.length > 0 ? klineData[klineData.length - 1].time : Math.floor(Date.now() / 1000);
+        }
+
+        function addChartMarker(time, position, color, shape, text) {
+            markersList.push({ time, position, color, shape, text });
+            markersList.sort((a, b) => a.time - b.time);
+            candlestickSeries.setMarkers(markersList);
+        }
+
+        function checkActivePosition(currentPrice) {
+            if (!activePosition) return;
+            let pnlFrac = activePosition.type === 'LONG' ? (currentPrice - activePosition.entryPrice) / activePosition.entryPrice : (activePosition.entryPrice - currentPrice) / activePosition.entryPrice;
+            const pnl = activePosition.size * pnlFrac;
+            
+            const cell = document.getElementById('livePnLCell');
+            if (cell) {
+                cell.innerText = (pnlFrac * 100).toFixed(2) + "% (" + pnl.toFixed(2) + "$)";
+                cell.className = pnl >= 0 ? "p-2.5 font-mono font-bold text-[#10b981]" === cell.className : "p-2.5 font-mono font-bold text-[#ef4444]";
+            }
+
+            if (activePosition.type === 'LONG') {
+                if (currentPrice >= activePosition.takeProfitPrice || currentPrice <= activePosition.stopLossPrice) closePosition(pnlFrac);
+            } else {
+                if (currentPrice <= activePosition.takeProfitPrice || currentPrice >= activePosition.stopLossPrice) closePosition(pnlFrac);
+            }
+        }
+
+        function closePosition(pnlFraction) {
+            balance += activePosition.size * pnlFraction;
+            addChartMarker(currTime(), 'aboveBar', pnlFraction > 0 ? '#10b981' : '#ef4444', 'square', pnlFraction > 0 ? '✅ هدف' : '❌ وقف');
+            activePosition = null;
+            updateUI();
+        }
+
+        function manualClose() {
+            if (!activePosition) return;
+            const currentPrice = parseFloat(document.getElementById('livePrice').innerText);
+            let pnlFrac = activePosition.type === 'LONG' ? (currentPrice - activePosition.entryPrice) / activePosition.entryPrice : (activePosition.entryPrice - currentPrice) / activePosition.entryPrice;
+            closePosition(pnlFrac);
+        }
+
+        function updateUI() {
+            document.getElementById('walletBalance').innerText = balance.toFixed(2) + " $";
+            const totalPnLPercent = ((balance - 100.00) / 100.00) * 100;
+            const totalPnLEl = document.getElementById('totalPnL');
+            totalPnLEl.innerText = (totalPnLPercent >= 0 ? "+" : "") + totalPnLPercent.toFixed(2) + "%";
+            totalPnLEl.className = totalPnLPercent >= 0 ? "font-mono text-xs font-bold text-[#10b981]" : "font-mono text-xs font-bold text-[#ef4444]";
+
+            const tableBody = document.getElementById('positionsTableBody');
+            if (activePosition) {
+                const color = activePosition.type === 'LONG' ? 'text-[#10b981]' : 'text-[#ef4444]';
+                tableBody.innerHTML = `
+                    <tr class="bg-[#171a21]/50">
+                        <td class="p-2.5 font-bold ${color}">${activePosition.type}</td>
+                        <td class="p-2.5 font-mono">${activePosition.entryPrice.toFixed(2)}</td>
+                        <td class="p-2.5 font-mono text-green-500">${activePosition.takeProfitPrice.toFixed(2)}</td>
+                        <td class="p-2.5 font-mono text-red-500">${activePosition.stopLossPrice.toFixed(2)}</td>
+                        <td id="livePnLCell" class="p-2.5 font-mono font-bold">جاري...</td>
+                        <td class="p-2.5 text-center">
+                            <button onclick="manualClose()" class="text-xs bg-red-500/20 text-red-400 border border-red-500/40 px-2 py-1 rounded">إغلاق</button>
+                        </td>
+                    </tr>
+                `;
+            } else {
+                tableBody.innerHTML = `<tr id="emptyRow"><td colspan="6" class="p-4 text-center text-gray-600">لا توجد صفقات مفتوحة.</td></tr>`;
+            }
+        }
+    </script>
+</body>
+</html>
